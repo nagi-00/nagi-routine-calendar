@@ -211,7 +211,7 @@
       if (inputPwd === "demian") {
         setIsAuthorized(true);
       } else {
-        alert("비밀번호가 다릅니다.");
+        alert("Please try again.");
       }
     };
 
@@ -222,7 +222,7 @@
           className="calendar-container"
           style={{ maxWidth: 400, margin: '100px auto', textAlign: 'center' }}
         >
-          <h2 className="text-xl font-semibold mb-4">비밀번호를 입력하세요</h2>
+          <h2 className="text-xl font-semibold mb-4">Enter the password.</h2>
           <input
             type="password"
             className="input-text"
@@ -234,7 +234,7 @@
             style={{ width: '100%', marginTop: '8px' }}
             onClick={checkPassword}
           >
-            확인
+            ▼
           </button>
         </div>
       );
