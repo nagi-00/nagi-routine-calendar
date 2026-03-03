@@ -268,6 +268,24 @@
     const [newTitle, setNewTitle] = React.useState('');
     const [newColor, setNewColor] = React.useState('#9CA3AF');
 
+    // 포커스 메시지
+    const [focusMessage, setFocusMessage] = React.useState('내면의 성장을 향한 여정');
+
+    React.useEffect(() => {
+      fetch('./demian_focus_messages (1).json')
+        .then(res => res.json())
+        .then(data => {
+          const msgs = data.messages;
+          if (msgs && msgs.length > 0) {
+            const random = msgs[Math.floor(Math.random() * msgs.length)];
+            setFocusMessage(random);
+          }
+        })
+        .catch(() => {
+          // 로드 실패 시 기본 메시지 유지
+        });
+    }, []);
+
     /********************************************************
      * (3-1) Firestore 구독: 'calendars' 컬렉션
      ********************************************************/
@@ -483,7 +501,7 @@
               </span>
               <button className="nav-button" onClick={() => navigateMonth('next')}>→</button>
             </div>
-            <p className="calendar-subtitle">내면의 성장을 향한 여정</p>
+            <p className="calendar-subtitle">{focusMessage}</p>
             <div className="calendar-grid mb-2">
               {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(day => (
                 <div key={day} className="calendar-day font-medium text-gray-600">
