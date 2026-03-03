@@ -16,6 +16,9 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+  <!-- html2canvas -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
   <style>
     @font-face {
       font-family: 'HJSS';
@@ -109,6 +112,9 @@
       width: 100%;
       max-width: 380px;
       box-shadow: 10px 10px 20px #b8bec7, -10px -10px 20px #ffffff;
+      position: relative;
+      isolation: isolate;
+      overflow: hidden;
     }
 
     .month-navigator {
@@ -288,6 +294,34 @@
       line-height: 1.75;
     }
 
+    /* ── export 버튼 ── */
+    .export-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 16px;
+      padding: 10px 20px;
+      background: #e0e5ec;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      box-shadow: 5px 5px 10px #b8bec7, -5px -5px 10px #ffffff;
+      color: #7a8499;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      transition: box-shadow 0.15s ease, color 0.2s ease;
+      font-family: 'HJSS', sans-serif;
+    }
+    .export-btn:hover {
+      color: #5a6478;
+    }
+    .export-btn:active {
+      box-shadow: inset 4px 4px 8px #b8bec7, inset -4px -4px 8px #ffffff;
+    }
+    .export-btn.done {
+      color: #6b9e7a;
+    }
+
     /* ── 비밀번호 화면 ── */
     .password-container {
       background: #e0e5ec;
@@ -380,6 +414,9 @@
     // 포커스 메시지
     const [focusMessage, setFocusMessage] = React.useState('');
 
+    // export 상태: 'idle' | 'loading' | 'copied' | 'saved'
+    const [exportStatus, setExportStatus] = React.useState('idle');
+
     React.useEffect(() => {
       fetch('./demian_focus_messages (1).json')
         .then(res => res.json())
@@ -391,6 +428,43 @@
         })
         .catch(() => {});
     }, []);
+
+    /********************************************************
+     * (3-0) 달력 이미지 export
+     ********************************************************/
+    const exportCalendar = async () => {
+      if (exportStatus === 'loading') return;
+      setExportStatus('loading');
+      try {
+        const el = document.getElementById('calendar-export-area');
+        const canvas = await html2canvas(el, {
+          backgroundColor: '#e0e5ec',
+          scale: 2,
+          useCORS: true,
+          logging: false,
+        });
+        canvas.toBlob(async (blob) => {
+          let status = 'saved';
+          try {
+            await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+            status = 'copied';
+          } catch {
+            // clipboard 미지원 시 파일로 다운로드
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `calendar-${currentDate.getFullYear()}-${currentDate.getMonth() + 1}.png`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }
+          setExportStatus(status);
+          setTimeout(() => setExportStatus('idle'), 2200);
+        });
+      } catch (err) {
+        console.error('export 실패:', err);
+        setExportStatus('idle');
+      }
+    };
 
     /********************************************************
      * (3-1) Firestore 구독: 'calendars' 컬렉션
@@ -549,63 +623,91 @@
         {/* 메인 컨텐츠 */}
         <div className={`main-content ${isSidebarCollapsed ? 'expanded' : ''}`}>
 
-          {/* 달력 카드 */}
-          <div className="calendar-container">
-            <div className="month-navigator">
-              <button className="nav-button" onClick={() => navigateMonth('prev')}>←</button>
-              <span className="month-title">
-                {currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
-              </span>
-              <button className="nav-button" onClick={() => navigateMonth('next')}>→</button>
+          {/* ── export 대상 영역 ── */}
+          <div id="calendar-export-area" style={{ width: '100%', maxWidth: '380px' }}>
+
+            {/* 달력 카드 */}
+            <div className="calendar-container">
+              <div className="month-navigator">
+                <button className="nav-button" onClick={() => navigateMonth('prev')}>←</button>
+                <span className="month-title">
+                  {currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+                </span>
+                <button className="nav-button" onClick={() => navigateMonth('next')}>→</button>
+              </div>
+
+              <p className="calendar-subtitle">내면의 성장을 향한 여정</p>
+
+              {/* 요일 헤더 */}
+              <div className="calendar-grid" style={{ marginBottom: '8px' }}>
+                {['SUN','MON','TUE','WED','THU','FRI','SAT'].map(d => (
+                  <div key={d} className="calendar-day day-header">{d}</div>
+                ))}
+              </div>
+
+              {/* 날짜 그리드 */}
+              <div className="calendar-grid">
+                {Array(firstDay).fill(null).map((_, i) => (
+                  <div key={`empty-${i}`} className="calendar-day day-empty" />
+                ))}
+                {Array(daysInMonth).fill(null).map((_, i) => {
+                  const day = i + 1;
+                  const year  = currentDate.getFullYear();
+                  const month = currentDate.getMonth() + 1;
+                  const dateKey = `${year}-${month}-${day}`;
+                  const isCompleted = currentCalendar.completedDates.includes(dateKey);
+                  return (
+                    <button
+                      key={day}
+                      className="calendar-day"
+                      onClick={() => toggleDate(day)}
+                      style={{
+                        backgroundColor: isCompleted ? currentCalendar.color : '#e0e5ec',
+                        color: isCompleted ? 'white' : '#4B5563',
+                        boxShadow: isCompleted
+                          ? 'inset 3px 3px 6px rgba(0,0,0,0.18), inset -2px -2px 5px rgba(255,255,255,0.15)'
+                          : ''
+                      }}
+                    >
+                      {day}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 테마 색상 multiply 오버레이 — 항상 last child */}
+              <div style={{
+                position: 'absolute',
+                inset: 0,
+                background: currentCalendar.color,
+                mixBlendMode: 'multiply',
+                opacity: 0.18,
+                pointerEvents: 'none',
+                borderRadius: '24px',
+              }} />
             </div>
 
-            <p className="calendar-subtitle">내면의 성장을 향한 여정</p>
+            {/* 포커스 메시지 위젯 */}
+            {focusMessage && (
+              <div className="focus-widget">
+                <p className="focus-widget-label">focus</p>
+                <p className="focus-widget-text">{focusMessage}</p>
+              </div>
+            )}
 
-            {/* 요일 헤더 */}
-            <div className="calendar-grid" style={{ marginBottom: '8px' }}>
-              {['SUN','MON','TUE','WED','THU','FRI','SAT'].map(d => (
-                <div key={d} className="calendar-day day-header">{d}</div>
-              ))}
-            </div>
+          </div>{/* /calendar-export-area */}
 
-            {/* 날짜 그리드 */}
-            <div className="calendar-grid">
-              {Array(firstDay).fill(null).map((_, i) => (
-                <div key={`empty-${i}`} className="calendar-day day-empty" />
-              ))}
-              {Array(daysInMonth).fill(null).map((_, i) => {
-                const day = i + 1;
-                const year  = currentDate.getFullYear();
-                const month = currentDate.getMonth() + 1;
-                const dateKey = `${year}-${month}-${day}`;
-                const isCompleted = currentCalendar.completedDates.includes(dateKey);
-                return (
-                  <button
-                    key={day}
-                    className="calendar-day"
-                    onClick={() => toggleDate(day)}
-                    style={{
-                      backgroundColor: isCompleted ? currentCalendar.color : '#e0e5ec',
-                      color: isCompleted ? 'white' : '#4B5563',
-                      boxShadow: isCompleted
-                        ? 'inset 3px 3px 6px rgba(0,0,0,0.18), inset -2px -2px 5px rgba(255,255,255,0.15)'
-                        : ''
-                    }}
-                  >
-                    {day}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 포커스 메시지 위젯 */}
-          {focusMessage && (
-            <div className="focus-widget">
-              <p className="focus-widget-label">focus</p>
-              <p className="focus-widget-text">{focusMessage}</p>
-            </div>
-          )}
+          {/* export 버튼 (캡처 대상 밖) */}
+          <button
+            className={`export-btn${exportStatus === 'copied' || exportStatus === 'saved' ? ' done' : ''}`}
+            onClick={exportCalendar}
+            disabled={exportStatus === 'loading'}
+          >
+            {exportStatus === 'loading' && '…'}
+            {exportStatus === 'copied'  && '✓ 클립보드에 복사됨'}
+            {exportStatus === 'saved'   && '✓ 저장됨'}
+            {exportStatus === 'idle'    && '↓ export'}
+          </button>
 
         </div>
       </div>
