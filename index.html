@@ -450,7 +450,6 @@
       display: flex;
       flex-direction: column;
       gap: 22px;
-      padding-top: 28px;
       flex-shrink: 0;
     }
 
@@ -876,6 +875,16 @@
     const exportCalendar = async () => {
       if (exportStatus === 'loading') return;
       setExportStatus('loading');
+
+      const el = document.getElementById('calendar-export-area');
+
+      // 화살표 버튼 export 시 숨김
+      const navBtns = el.querySelectorAll('.nav-button');
+      navBtns.forEach(b => { b.style.visibility = 'hidden'; });
+
+      // DOM 업데이트 대기
+      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+
       try {
         const el = document.getElementById('calendar-export-area');
         const navBtns = el.querySelectorAll('.nav-button');
@@ -915,6 +924,7 @@
         setExportStatus(status);
         setTimeout(() => setExportStatus('idle'), 2200);
       } catch (err) {
+        navBtns.forEach(b => { b.style.visibility = ''; });
         console.error('export 실패:', err);
         setExportStatus('idle');
       }
@@ -1500,7 +1510,7 @@
             {exportStatus === 'loading' && '…'}
             {exportStatus === 'copied'  && '✓ 클립보드에 복사됨'}
             {exportStatus === 'saved'   && '✓ 저장됨'}
-            {exportStatus === 'idle'    && '↓ export'}
+            {exportStatus === 'idle'    && 'export'}
           </button>
 
         </div>{/* /main-content */}
