@@ -61,7 +61,7 @@ function createWindow() {
     }
   });
 
-  win.loadFile('index.html');
+  win.loadFile(path.join(__dirname, 'index.html'));
 
   win.once('ready-to-show', () => {
     win.show();

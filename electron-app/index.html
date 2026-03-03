@@ -12,10 +12,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 
-  <!-- Firebase (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
   <!-- dom-to-image -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
 
@@ -454,6 +450,7 @@
       display: flex;
       flex-direction: column;
       gap: 22px;
+      padding-top: 28px;
       flex-shrink: 0;
     }
 
@@ -631,7 +628,7 @@
       letter-spacing: 0.04em;
     }
 
-    /* ── 비밀번호 화면 ── */
+    /* ── 비밀번호 화면 (구조 유지용, 사용 안 함) ── */
     .password-container {
       background: var(--bg);
       border-radius: 24px;
@@ -648,6 +645,107 @@
       margin-bottom: 24px;
       letter-spacing: 0.05em;
     }
+
+    /* ── 설정 패널 ── */
+    .settings-panel {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid var(--sh-dark);
+    }
+    .settings-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--text-sub);
+      letter-spacing: 0.06em;
+      margin-bottom: 0;
+      padding: 4px 0;
+      background: none;
+      border: none;
+      width: 100%;
+      font-family: 'HJSS', sans-serif;
+    }
+    .settings-toggle:hover { color: var(--text-pri); }
+    .settings-body { margin-top: 16px; }
+    .settings-section-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .theme-dots {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .theme-dot {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      transition: box-shadow 0.15s;
+    }
+    .focus-msg-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      margin-bottom: 6px;
+      font-size: 12px;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+    .focus-msg-text {
+      flex: 1;
+      min-width: 0;
+      word-break: break-word;
+    }
+    .focus-add-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 8px;
+      align-items: flex-end;
+    }
+    .focus-add-textarea {
+      flex: 1;
+      min-height: 44px;
+      border: none;
+      border-radius: 10px;
+      padding: 8px 10px;
+      background: var(--bg);
+      box-shadow: inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light);
+      color: var(--text-pri);
+      outline: none;
+      font-size: 12px;
+      font-family: 'HJSS', sans-serif;
+      resize: none;
+      line-height: 1.5;
+    }
+
+    /* ── 포커스 위젯 헤더 행 ── */
+    .focus-widget-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .focus-refresh-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 14px;
+      padding: 2px 4px;
+      border-radius: 6px;
+      transition: color 0.15s;
+      line-height: 1;
+    }
+    .focus-refresh-btn:hover {
+      color: var(--text-sub);
+    }
   </style>
 </head>
 <body>
@@ -655,61 +753,7 @@
 
   <script type="text/babel">
   /********************************************************
-   * 1) Firebase 설정 및 초기화
-   ********************************************************/
-  const firebaseConfig = {
-    apiKey: "AIzaSyC7-uDX9U7jwXywrJTq2N29wv3bxmFSTlk",
-    authDomain: "nagi-routine.firebaseapp.com",
-    projectId: "nagi-routine",
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-
-  /********************************************************
-   * 2) 비밀번호 보호 컴포넌트 (PasswordGuard)
-   ********************************************************/
-  function PasswordGuard({ children }) {
-    const [inputPwd, setInputPwd] = React.useState('');
-    const [isAuthorized, setIsAuthorized] = React.useState(false);
-
-    const checkPassword = () => {
-      if (inputPwd === "demian") {
-        setIsAuthorized(true);
-      } else {
-        alert("Please try again.");
-      }
-    };
-
-    const handleKeyDown = (e) => {
-      if (e.key === 'Enter') checkPassword();
-    };
-
-    if (!isAuthorized) {
-      return (
-        <div className="password-container">
-          <p className="password-title">Enter the password.</p>
-          <input
-            type="password"
-            className="input-text"
-            value={inputPwd}
-            onChange={(e) => setInputPwd(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-          <button
-            className="add-button"
-            style={{ width: '100%', marginTop: '12px' }}
-            onClick={checkPassword}
-          >
-            ▼
-          </button>
-        </div>
-      );
-    }
-    return children;
-  }
-
-  /********************************************************
-   * 2-1) SVG 아이콘 컴포넌트
+   * 1) 아이콘 컴포넌트
    ********************************************************/
   const IconPen = ({ size = 11 }) => (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none"
@@ -728,7 +772,40 @@
   );
 
   /********************************************************
-   * 3) 달력 App
+   * 2) 상수 및 유틸
+   ********************************************************/
+  const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+  const THEMES = [
+    { name: 'Sand',      bg: '#EEEAE3', dark: '#CEC8BE', light: '#FFFFFF' },
+    { name: 'Parchment', bg: '#E8E2D8', dark: '#C8C2B8', light: '#FFFEF8' },
+    { name: 'Cream',     bg: '#F2EDE6', dark: '#D2CDC6', light: '#FFFFFF' },
+    { name: 'Mist',      bg: '#E6EAE8', dark: '#C6CAC8', light: '#FFFFFF' },
+    { name: 'Rose',      bg: '#EDE8E8', dark: '#CDC8C8', light: '#FFFFFF' },
+  ];
+
+  const applyTheme = (s) => {
+    document.documentElement.style.setProperty('--bg', s.bgColor);
+    document.documentElement.style.setProperty('--sh-dark', s.bgDark);
+    document.documentElement.style.setProperty('--sh-light', s.bgLight);
+  };
+
+  const defaultSettings = {
+    bgColor: '#EEEAE3',
+    bgDark: '#CEC8BE',
+    bgLight: '#FFFFFF',
+    subtitle: '내면의 성장을 향한 여정',
+    focusMessages: [
+      '오늘도 한 걸음씩, 꾸준히.',
+      '작은 변화가 큰 성장을 만든다.',
+      '지금 이 순간이 가장 중요하다.',
+      '매일의 기록이 당신의 역사가 된다.',
+      '포기하지 않는 것이 가장 큰 용기다.',
+    ],
+  };
+
+  /********************************************************
+   * 3) 앱 컴포넌트
    ********************************************************/
   function App() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
@@ -744,6 +821,12 @@
     const [editTitle, setEditTitle] = React.useState('');
     const [editColor, setEditColor] = React.useState('#9CA3AF');
 
+    // 설정
+    const [settings, setSettings] = React.useState(defaultSettings);
+    const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+    const [newFocusMsg, setNewFocusMsg] = React.useState('');
+    const [editSubtitle, setEditSubtitle] = React.useState('');
+
     // 포커스 메시지
     const [focusMessage, setFocusMessage] = React.useState('');
 
@@ -751,55 +834,71 @@
     const [exportStatus, setExportStatus] = React.useState('idle');
 
     // Pin 모달
-    const [pinModal, setPinModal] = React.useState({ open: false, dateKey: '', memo: '' });
+    const [pinModal, setPinModal] = React.useState({ open: false, dateKey: '', memo: '', image: null });
 
     // 롱프레스 감지 ref
     const pressTimer = React.useRef(null);
     const didLongPress = React.useRef(false);
 
+    /********************************************************
+     * (3-0) 데이터 로드 (Electron IPC)
+     ********************************************************/
     React.useEffect(() => {
-      fetch('./demian_focus_messages (1).json')
-        .then(res => res.json())
-        .then(data => {
-          const msgs = data.messages;
-          if (msgs && msgs.length > 0) {
-            setFocusMessage(msgs[Math.floor(Math.random() * msgs.length)]);
-          }
-        })
-        .catch(() => {});
+      window.electronAPI.getData().then(({ calendars: cals, settings: setts }) => {
+        const loadedCals = cals || [];
+        setCalendars(loadedCals);
+        setSelectedCalendar(loadedCals.length > 0 ? loadedCals[0].id : null);
+
+        const s = { ...defaultSettings, ...setts };
+        setSettings(s);
+        setEditSubtitle(s.subtitle);
+        applyTheme(s);
+
+        if (s.focusMessages && s.focusMessages.length > 0) {
+          setFocusMessage(s.focusMessages[Math.floor(Math.random() * s.focusMessages.length)]);
+        }
+      });
     }, []);
 
     /********************************************************
-     * (3-0) 달력 이미지 export
+     * (3-1) 저장 헬퍼
+     ********************************************************/
+    const save = (newCals, newSetts) => {
+      window.electronAPI.saveData({
+        calendars: newCals ?? calendars,
+        settings: newSetts ?? settings,
+      });
+    };
+
+    /********************************************************
+     * (3-2) export
      ********************************************************/
     const exportCalendar = async () => {
       if (exportStatus === 'loading') return;
       setExportStatus('loading');
-
-      const el = document.getElementById('calendar-export-area');
-
-      // 화살표 버튼 export 시 숨김
-      const navBtns = el.querySelectorAll('.nav-button');
-      navBtns.forEach(b => { b.style.visibility = 'hidden'; });
-
-      // DOM 업데이트 대기
-      await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-
       try {
-        const scale = 2;
-        const blob = await domtoimage.toBlob(el, {
-          bgcolor: '#EEEAE3',
-          width: el.offsetWidth * scale,
-          height: el.offsetHeight * scale,
-          style: {
-            transform: `scale(${scale})`,
-            transformOrigin: 'top left',
-            width: el.offsetWidth + 'px',
-            height: el.offsetHeight + 'px',
-          },
-        });
+        const el = document.getElementById('calendar-export-area');
+        const navBtns = el.querySelectorAll('.nav-button');
+        navBtns.forEach(b => { b.style.visibility = 'hidden'; });
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
 
-        navBtns.forEach(b => { b.style.visibility = ''; });
+        let blob;
+        try {
+          const scale = 2;
+          blob = await domtoimage.toBlob(el, {
+            bgcolor: settings.bgColor,
+            width:  el.offsetWidth  * scale,
+            height: el.offsetHeight * scale,
+            style: {
+              transform: `scale(${scale})`,
+              transformOrigin: 'top left',
+              width:  el.offsetWidth  + 'px',
+              height: el.offsetHeight + 'px',
+            },
+          });
+        } finally {
+          navBtns.forEach(b => { b.style.visibility = ''; });
+        }
 
         let status = 'saved';
         try {
@@ -816,52 +915,33 @@
         setExportStatus(status);
         setTimeout(() => setExportStatus('idle'), 2200);
       } catch (err) {
-        navBtns.forEach(b => { b.style.visibility = ''; });
         console.error('export 실패:', err);
         setExportStatus('idle');
       }
     };
 
     /********************************************************
-     * (3-1) Firestore 구독: 'calendars' 컬렉션
+     * (3-3) 새 캘린더 추가
      ********************************************************/
-    React.useEffect(() => {
-      const unsubscribe = db.collection('calendars').onSnapshot(
-        (snapshot) => {
-          const loaded = [];
-          snapshot.forEach(doc => {
-            loaded.push({ id: doc.id, ...doc.data() });
-          });
-          setCalendars(loaded);
-          // 선택된 캘린더가 없을 때만 첫 번째를 기본 선택
-          setSelectedCalendar(prev => prev || (loaded.length > 0 ? loaded[0].id : null));
-        },
-        (error) => { console.error("Firestore 구독 에러:", error); }
-      );
-      return () => unsubscribe();
-    }, []);  // 마운트 시 한 번만 구독
-
-    /********************************************************
-     * (3-2) 새 캘린더 추가
-     ********************************************************/
-    const addCalendar = async () => {
+    const addCalendar = () => {
       if (!newTitle.trim()) return;
-      try {
-        await db.collection('calendars').add({
-          title: newTitle,
-          color: newColor,
-          completedDates: [],
-          pinnedDates: {},
-        });
-        setNewTitle('');
-        setNewColor('#9CA3AF');
-      } catch (err) {
-        console.error("달력 추가 중 에러:", err);
-      }
+      const newCal = {
+        id: genId(),
+        title: newTitle.trim(),
+        color: newColor,
+        completedDates: [],
+        pinnedDates: {},
+      };
+      const newCals = [...calendars, newCal];
+      setCalendars(newCals);
+      if (!selectedCalendar) setSelectedCalendar(newCal.id);
+      save(newCals, null);
+      setNewTitle('');
+      setNewColor('#9CA3AF');
     };
 
     /********************************************************
-     * (3-3) 달력 편집 (제목 / 색상)
+     * (3-4) 달력 편집
      ********************************************************/
     const startEditCalendar = (cal, e) => {
       e.stopPropagation();
@@ -870,27 +950,24 @@
       setEditColor(cal.color);
     };
 
-    const saveEditCalendar = async (calId) => {
+    const saveEditCalendar = (calId) => {
       if (!editTitle.trim()) return;
-      try {
-        await db.collection('calendars').doc(calId).update({
-          title: editTitle,
-          color: editColor,
-        });
-        setEditingCalId(null);
-      } catch (err) {
-        console.error("달력 수정 중 에러:", err);
-      }
+      const newCals = calendars.map(c =>
+        c.id === calId ? { ...c, title: editTitle.trim(), color: editColor } : c
+      );
+      setCalendars(newCals);
+      save(newCals, null);
+      setEditingCalId(null);
     };
 
     const cancelEditCalendar = () => setEditingCalId(null);
 
     /********************************************************
-     * (3-4) 날짜 토글
+     * (3-5) 날짜 토글
      ********************************************************/
-    const toggleDate = async (day) => {
+    const toggleDate = (day) => {
       if (!selectedCalendar) return;
-      const targetCal = calendars.find(cal => cal.id === selectedCalendar);
+      const targetCal = calendars.find(c => c.id === selectedCalendar);
       if (!targetCal) return;
 
       const year = currentDate.getFullYear();
@@ -901,65 +978,75 @@
       const idx = dates.indexOf(dateKey);
       if (idx === -1) { dates.push(dateKey); } else { dates.splice(idx, 1); }
 
-      try {
-        await db.collection('calendars').doc(selectedCalendar).update({ completedDates: dates });
-      } catch (err) {
-        console.error("날짜 토글 중 에러:", err);
-      }
+      const newCals = calendars.map(c =>
+        c.id === selectedCalendar ? { ...c, completedDates: dates } : c
+      );
+      setCalendars(newCals);
+      save(newCals, null);
     };
 
     /********************************************************
-     * (3-5) 캘린더 삭제
+     * (3-6) 달력 삭제
      ********************************************************/
-    const deleteCalendar = async (calendarId, e) => {
+    const deleteCalendar = (calendarId, e) => {
       e.stopPropagation();
-      const ok = window.confirm("정말 이 캘린더를 삭제할까?");
+      const ok = window.confirm('정말 이 캘린더를 삭제할까?');
       if (!ok) return;
-      try {
-        await db.collection('calendars').doc(calendarId).delete();
-        if (selectedCalendar === calendarId) setSelectedCalendar(null);
-      } catch (err) {
-        console.error("캘린더 삭제 중 오류:", err);
+      const newCals = calendars.filter(c => c.id !== calendarId);
+      setCalendars(newCals);
+      if (selectedCalendar === calendarId) {
+        setSelectedCalendar(newCals.length > 0 ? newCals[0].id : null);
       }
+      save(newCals, null);
     };
 
     /********************************************************
-     * (3-6) 롱프레스 — Pin 모달
+     * (3-7) 롱프레스 — Pin 모달
      ********************************************************/
     const openPinModal = (day) => {
       if (!selectedCalendar) return;
       const year = currentDate.getFullYear();
       const month = currentDate.getMonth() + 1;
       const dateKey = `${year}-${month}-${day}`;
-      const existingMemo = (currentCalendar.pinnedDates || {})[dateKey] || '';
-      setPinModal({ open: true, dateKey, memo: existingMemo });
+      const existing = (currentCalendar.pinnedDates || {})[dateKey] || {};
+      const memo = typeof existing === 'string' ? existing : (existing.memo || '');
+      const image = typeof existing === 'string' ? null : (existing.image || null);
+      setPinModal({ open: true, dateKey, memo, image });
     };
 
-    const savePinMemo = async () => {
+    const savePinMemo = () => {
       if (!selectedCalendar) return;
       const newPinnedDates = { ...(currentCalendar.pinnedDates || {}) };
-      if (pinModal.memo.trim()) {
-        newPinnedDates[pinModal.dateKey] = pinModal.memo.trim();
+      if (pinModal.memo.trim() || pinModal.image) {
+        newPinnedDates[pinModal.dateKey] = { memo: pinModal.memo.trim(), image: pinModal.image };
       } else {
         delete newPinnedDates[pinModal.dateKey];
       }
-      try {
-        await db.collection('calendars').doc(selectedCalendar).update({ pinnedDates: newPinnedDates });
-        setPinModal({ open: false, dateKey: '', memo: '' });
-      } catch (err) {
-        console.error("핀 저장 중 에러:", err);
-      }
+      const newCals = calendars.map(c =>
+        c.id === selectedCalendar ? { ...c, pinnedDates: newPinnedDates } : c
+      );
+      setCalendars(newCals);
+      save(newCals, null);
+      setPinModal({ open: false, dateKey: '', memo: '', image: null });
     };
 
-    const removePin = async (dateKey) => {
+    const removePin = (dateKey) => {
       if (!selectedCalendar) return;
       const newPinnedDates = { ...(currentCalendar.pinnedDates || {}) };
       delete newPinnedDates[dateKey];
-      try {
-        await db.collection('calendars').doc(selectedCalendar).update({ pinnedDates: newPinnedDates });
-      } catch (err) {
-        console.error("핀 제거 중 에러:", err);
-      }
+      const newCals = calendars.map(c =>
+        c.id === selectedCalendar ? { ...c, pinnedDates: newPinnedDates } : c
+      );
+      setCalendars(newCals);
+      save(newCals, null);
+    };
+
+    const handleImageSelect = (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (ev) => setPinModal(prev => ({ ...prev, image: ev.target.result }));
+      reader.readAsDataURL(file);
     };
 
     const handlePressStart = (day) => {
@@ -981,7 +1068,7 @@
     };
 
     /********************************************************
-     * (3-7) 월 이동, 사이드바 토글
+     * (3-8) 월 이동, 사이드바 토글
      ********************************************************/
     const navigateMonth = (direction) => {
       setCurrentDate(prev => {
@@ -994,36 +1081,78 @@
     const toggleSidebar = () => setIsSidebarCollapsed(v => !v);
 
     /********************************************************
-     * (3-8) 현재 선택된 캘린더
+     * (3-9) 설정 핸들러
      ********************************************************/
-    const currentCalendar = calendars.find(cal => cal.id === selectedCalendar)
+    const applyThemePreset = (theme) => {
+      const newSetts = { ...settings, bgColor: theme.bg, bgDark: theme.dark, bgLight: theme.light };
+      setSettings(newSetts);
+      applyTheme(newSetts);
+      save(null, newSetts);
+    };
+
+    const saveSubtitle = () => {
+      const newSetts = { ...settings, subtitle: editSubtitle };
+      setSettings(newSetts);
+      save(null, newSetts);
+    };
+
+    const addFocusMessage = () => {
+      if (!newFocusMsg.trim()) return;
+      const newMsgs = [...(settings.focusMessages || []), newFocusMsg.trim()];
+      const newSetts = { ...settings, focusMessages: newMsgs };
+      setSettings(newSetts);
+      setFocusMessage(newFocusMsg.trim());
+      save(null, newSetts);
+      setNewFocusMsg('');
+    };
+
+    const deleteFocusMessage = (idx) => {
+      const newMsgs = settings.focusMessages.filter((_, i) => i !== idx);
+      const newSetts = { ...settings, focusMessages: newMsgs };
+      setSettings(newSetts);
+      save(null, newSetts);
+      if (newMsgs.length > 0) {
+        setFocusMessage(newMsgs[Math.floor(Math.random() * newMsgs.length)]);
+      } else {
+        setFocusMessage('');
+      }
+    };
+
+    const refreshFocusMessage = () => {
+      const msgs = settings.focusMessages;
+      if (!msgs || msgs.length === 0) return;
+      setFocusMessage(msgs[Math.floor(Math.random() * msgs.length)]);
+    };
+
+    /********************************************************
+     * (3-10) 파생 값
+     ********************************************************/
+    const currentCalendar = calendars.find(c => c.id === selectedCalendar)
                           || { completedDates: [], color: '#9CA3AF', pinnedDates: {} };
 
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
     const firstDay    = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
 
-    // 이번 달 핀 목록
     const pinnedDates = currentCalendar.pinnedDates || {};
     const monthPrefix = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-`;
     const currentMonthPins = Object.entries(pinnedDates)
       .filter(([key]) => key.startsWith(monthPrefix))
       .sort(([a], [b]) => parseInt(a.split('-')[2]) - parseInt(b.split('-')[2]));
 
-    // dateKey → 읽기 좋은 날짜 문자열
     const formatDateKey = (dateKey) => {
       const [year, month, day] = dateKey.split('-');
       return `${year}. ${String(month).padStart(2, '0')}. ${String(day).padStart(2, '0')}`;
     };
 
-    // 포스트잇 기울기 변주
     const postitRotations = [-1.5, 1, -0.8, 1.3, -1.1, 0.7];
 
     /********************************************************
-     * (3-9) 최종 렌더링
+     * (3-11) 렌더링
      ********************************************************/
     return (
       <div className="app-container">
-        {/* 사이드바 */}
+
+        {/* ── 사이드바 ── */}
         <div className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
           <p className="sidebar-title">List</p>
 
@@ -1082,6 +1211,7 @@
             })}
           </div>
 
+          {/* 새 캘린더 폼 */}
           <div className="new-calendar-form">
             <input
               type="text"
@@ -1101,6 +1231,95 @@
               <button className="add-button" onClick={addCalendar}>Add</button>
             </div>
           </div>
+
+          {/* ── 설정 패널 ── */}
+          <div className="settings-panel">
+            <button
+              className="settings-toggle"
+              onClick={() => setIsSettingsOpen(v => !v)}
+            >
+              <span>Settings</span>
+              <span style={{ fontSize: 11 }}>{isSettingsOpen ? '▲' : '▼'}</span>
+            </button>
+
+            {isSettingsOpen && (
+              <div className="settings-body">
+
+                {/* 배경 테마 */}
+                <p className="settings-section-label">background</p>
+                <div className="theme-dots">
+                  {THEMES.map(theme => {
+                    const isActive = settings.bgColor === theme.bg;
+                    return (
+                      <button
+                        key={theme.name}
+                        className="theme-dot"
+                        title={theme.name}
+                        style={{
+                          background: theme.bg,
+                          boxShadow: isActive
+                            ? `inset 3px 3px 6px ${theme.dark}, inset -3px -3px 6px ${theme.light}`
+                            : `3px 3px 6px ${theme.dark}, -3px -3px 6px ${theme.light}`,
+                        }}
+                        onClick={() => applyThemePreset(theme)}
+                      />
+                    );
+                  })}
+                </div>
+
+                {/* 서브타이틀 */}
+                <p className="settings-section-label">subtitle</p>
+                <div className="cal-edit-row" style={{ marginBottom: 16 }}>
+                  <input
+                    type="text"
+                    className="input-text-sm"
+                    value={editSubtitle}
+                    onChange={(e) => setEditSubtitle(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && saveSubtitle()}
+                  />
+                  <button className="sm-button" onClick={saveSubtitle}>저장</button>
+                </div>
+
+                {/* 포커스 메시지 */}
+                <p className="settings-section-label">focus</p>
+                <div>
+                  {(settings.focusMessages || []).map((msg, idx) => (
+                    <div key={idx} className="focus-msg-item">
+                      <span className="focus-msg-text">{msg}</span>
+                      <button
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          cursor: 'pointer',
+                          color: 'var(--text-muted)',
+                          padding: '2px',
+                          flexShrink: 0,
+                          display: 'flex',
+                          alignItems: 'center',
+                        }}
+                        onClick={() => deleteFocusMessage(idx)}
+                        title="삭제"
+                      >
+                        <IconX size={8} />
+                      </button>
+                    </div>
+                  ))}
+                  <div className="focus-add-row">
+                    <textarea
+                      className="focus-add-textarea"
+                      rows={2}
+                      placeholder="새 메시지 입력..."
+                      value={newFocusMsg}
+                      onChange={(e) => setNewFocusMsg(e.target.value)}
+                    />
+                    <button className="sm-button" onClick={addFocusMessage}>+</button>
+                  </div>
+                </div>
+
+              </div>
+            )}
+          </div>
+
         </div>
 
         {/* 사이드바 토글 버튼 */}
@@ -1111,14 +1330,14 @@
           {isSidebarCollapsed ? '→' : '←'}
         </button>
 
-        {/* 메인 컨텐츠 */}
+        {/* ── 메인 컨텐츠 ── */}
         <div className={`main-content ${isSidebarCollapsed ? 'expanded' : ''}`}>
 
-          {/* ── export 대상 영역 (달력 + 포스트잇 모두 포함) ── */}
+          {/* ── export 캡처 영역 (달력 + 포스트잇 flex row) ── */}
           <div
             id="calendar-export-area"
             style={{
-              background: '#EEEAE3',
+              background: settings.bgColor || '#EEEAE3',
               borderRadius: '32px',
               padding: '32px',
               display: 'flex',
@@ -1126,8 +1345,9 @@
               alignItems: 'flex-start',
             }}
           >
-            {/* 왼쪽: 달력 + 포커스 위젯 */}
-            <div>
+
+            {/* 왼쪽 컬럼: 달력 + 포커스 위젯 */}
+            <div style={{ flex: '0 0 auto' }}>
 
               {/* 달력 카드 */}
               <div className="calendar-container">
@@ -1139,7 +1359,7 @@
                   <button className="nav-button" onClick={() => navigateMonth('next')}>→</button>
                 </div>
 
-                <p className="calendar-subtitle">내면의 성장을 향한 여정</p>
+                <p className="calendar-subtitle">{settings.subtitle}</p>
 
                 {/* 요일 헤더 */}
                 <div className="calendar-grid" style={{ marginBottom: '8px' }}>
@@ -1197,17 +1417,27 @@
               {/* 포커스 메시지 위젯 */}
               {focusMessage && (
                 <div className="focus-widget">
-                  <p className="focus-widget-label">focus</p>
+                  <div className="focus-widget-header">
+                    <p className="focus-widget-label" style={{ marginBottom: 0 }}>focus</p>
+                    <button
+                      className="focus-refresh-btn"
+                      onClick={refreshFocusMessage}
+                      title="새 메시지"
+                    >↺</button>
+                  </div>
                   <p className="focus-widget-text">{focusMessage}</p>
                 </div>
               )}
 
-            </div>{/* /왼쪽 컬럼 */}
+            </div>{/* /left col */}
 
-            {/* 오른쪽: 포스트잇 컬럼 */}
+            {/* 오른쪽 컬럼: 포스트잇 */}
             {currentMonthPins.length > 0 && (
-              <div className="postit-col" style={{ paddingTop: '4px' }}>
-                {currentMonthPins.map(([dateKey, memo], idx) => {
+              <div className="postit-col">
+                {currentMonthPins.map(([dateKey, pinData], idx) => {
+                  const pin = pinData;
+                  const memo = typeof pin === 'string' ? pin : (pin?.memo || '');
+                  const img = typeof pin === 'string' ? null : (pin?.image || null);
                   const dayNum = dateKey.split('-')[2];
                   return (
                     <div
@@ -1232,11 +1462,19 @@
                       {/* 메모 본문 */}
                       <p className="postit-memo">{memo}</p>
 
+                      {/* 이미지 */}
+                      {img ? <img src={img} alt="" style={{ width: '100%', borderRadius: '6px', marginTop: '8px', display: 'block' }} /> : null}
+
                       {/* 액션 버튼 */}
                       <div className="postit-actions">
                         <button
                           className="postit-btn"
-                          onClick={() => setPinModal({ open: true, dateKey, memo })}
+                          onClick={() => {
+                            const existing = currentCalendar.pinnedDates?.[dateKey] || {};
+                            const m = typeof existing === 'string' ? existing : (existing.memo || '');
+                            const im = typeof existing === 'string' ? null : (existing.image || null);
+                            setPinModal({ open: true, dateKey, memo: m, image: im });
+                          }}
                           title="편집"
                         ><IconPen size={10} /></button>
                         <button
@@ -1262,7 +1500,7 @@
             {exportStatus === 'loading' && '…'}
             {exportStatus === 'copied'  && '✓ 클립보드에 복사됨'}
             {exportStatus === 'saved'   && '✓ 저장됨'}
-            {exportStatus === 'idle'    && 'export'}
+            {exportStatus === 'idle'    && '↓ export'}
           </button>
 
         </div>{/* /main-content */}
@@ -1271,7 +1509,7 @@
         {pinModal.open && (
           <div
             className="modal-overlay"
-            onClick={() => setPinModal({ open: false, dateKey: '', memo: '' })}
+            onClick={() => setPinModal({ open: false, dateKey: '', memo: '', image: null })}
           >
             <div className="modal-card" onClick={(e) => e.stopPropagation()}>
               <p className="modal-date-label">{formatDateKey(pinModal.dateKey)}</p>
@@ -1284,10 +1522,43 @@
                 placeholder="이 날짜에 대해 남겨두고 싶은 말"
                 autoFocus
               />
+
+              {/* 이미지 첨부 */}
+              <div style={{ marginBottom: '14px' }}>
+                {pinModal.image ? (
+                  <div style={{ position: 'relative', display: 'inline-block' }}>
+                    <img
+                      src={pinModal.image}
+                      alt=""
+                      style={{ maxWidth: '100%', maxHeight: '160px', borderRadius: '10px', display: 'block' }}
+                    />
+                    <button
+                      onClick={() => setPinModal(prev => ({ ...prev, image: null }))}
+                      style={{
+                        position: 'absolute', top: 4, right: 4,
+                        background: 'rgba(0,0,0,0.4)', border: 'none', borderRadius: '50%',
+                        width: 22, height: 22, cursor: 'pointer', color: '#fff',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                      }}
+                    ><IconX size={8} /></button>
+                  </div>
+                ) : (
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: 'var(--text-muted)', fontSize: 12 }}>
+                    <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageSelect} />
+                    <span style={{
+                      padding: '7px 14px', borderRadius: 10,
+                      background: 'var(--bg)',
+                      boxShadow: '3px 3px 6px var(--sh-dark), -3px -3px 6px var(--sh-light)',
+                      fontSize: 12, color: 'var(--text-sub)',
+                    }}>+ 사진 첨부</span>
+                  </label>
+                )}
+              </div>
+
               <div className="modal-actions">
                 <button
                   className="sm-button"
-                  onClick={() => setPinModal({ open: false, dateKey: '', memo: '' })}
+                  onClick={() => setPinModal({ open: false, dateKey: '', memo: '', image: null })}
                 >취소</button>
                 <button className="sm-button" onClick={savePinMemo}>저장</button>
               </div>
@@ -1303,11 +1574,7 @@
    * 4) 최종 렌더링
    ********************************************************/
   const root = ReactDOM.createRoot(document.getElementById('root'));
-  root.render(
-    <PasswordGuard>
-      <App />
-    </PasswordGuard>
-  );
+  root.render(<App />);
   </script>
 </body>
 </html>
