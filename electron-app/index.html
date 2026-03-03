@@ -746,6 +746,185 @@
     .focus-refresh-btn:hover {
       color: var(--text-sub);
     }
+
+    /* ── 통계 모달 ── */
+    .stats-modal-card {
+      background: var(--bg);
+      border-radius: 24px;
+      padding: 32px 28px;
+      width: 480px;
+      max-width: 92vw;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 16px 16px 32px var(--sh-dark), -16px -16px 32px var(--sh-light);
+    }
+    .stats-modal-title {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+    }
+    .stats-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      margin-bottom: 28px;
+    }
+    .stats-card {
+      background: var(--bg);
+      border-radius: 18px;
+      padding: 18px 20px;
+      box-shadow: 6px 6px 12px var(--sh-dark), -6px -6px 12px var(--sh-light);
+    }
+    .stats-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+    .stats-cal-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .stats-cal-name {
+      font-size: 13px;
+      color: var(--text-sub);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .stats-cal-total {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .stats-numbers {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .stats-num-box {
+      flex: 1;
+      background: var(--bg);
+      border-radius: 12px;
+      padding: 12px 10px;
+      text-align: center;
+      box-shadow: inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light);
+    }
+    .stats-num-value {
+      font-size: 22px;
+      font-weight: 600;
+      color: var(--text-pri);
+      line-height: 1.1;
+    }
+    .stats-num-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin-top: 4px;
+    }
+    .stats-bar-wrap {
+      background: var(--bg);
+      border-radius: 100px;
+      height: 8px;
+      box-shadow: inset 2px 2px 4px var(--sh-dark), inset -2px -2px 4px var(--sh-light);
+      overflow: hidden;
+    }
+    .stats-bar-fill {
+      height: 100%;
+      border-radius: 100px;
+      transition: width 0.6s ease;
+    }
+    .stats-bar-pct {
+      font-size: 10px;
+      color: var(--text-muted);
+      text-align: right;
+      margin-top: 4px;
+    }
+    .stats-export-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      padding: 11px;
+      background: var(--bg);
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light);
+      color: var(--text-sub);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      transition: box-shadow 0.15s ease, color 0.2s ease;
+      font-family: 'HJSS', sans-serif;
+    }
+    .stats-export-btn:hover { color: var(--text-pri); }
+    .stats-export-btn:active {
+      box-shadow: inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light);
+    }
+    .stats-export-btn.done { color: #6b9e7a; }
+
+    /* ── 전체 메모 모달 ── */
+    .memos-modal-card {
+      background: var(--bg);
+      border-radius: 24px;
+      padding: 32px 28px;
+      width: 480px;
+      max-width: 92vw;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 16px 16px 32px var(--sh-dark), -16px -16px 32px var(--sh-light);
+    }
+    .memos-modal-title {
+      font-size: 11px;
+      color: var(--text-muted);
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+    .memo-group-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      margin: 16px 0 8px;
+    }
+    .memo-entry {
+      background: var(--bg);
+      border-radius: 14px;
+      padding: 14px 16px;
+      margin-bottom: 8px;
+      box-shadow: 4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light);
+    }
+    .memo-entry-date {
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 6px;
+    }
+    .memo-entry-text {
+      font-size: 12px;
+      color: var(--text-sub);
+      line-height: 1.65;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .memo-entry-img {
+      width: 100%;
+      border-radius: 8px;
+      margin-top: 8px;
+      display: block;
+    }
+    .memos-empty {
+      font-size: 12px;
+      color: var(--text-muted);
+      text-align: center;
+      padding: 32px 0;
+    }
   </style>
 </head>
 <body>
@@ -844,9 +1023,14 @@
 
     // export 상태: 'idle' | 'loading' | 'copied' | 'saved'
     const [exportStatus, setExportStatus] = React.useState('idle');
+    const [statsExportStatus, setStatsExportStatus] = React.useState('idle');
 
     // Pin 모달
     const [pinModal, setPinModal] = React.useState({ open: false, dateKey: '', memo: '', image: null });
+
+    // 통계 / 전체 메모 모달
+    const [showStats, setShowStats] = React.useState(false);
+    const [showMemos, setShowMemos] = React.useState(false);
 
     // 롱프레스 감지 ref
     const pressTimer = React.useRef(null);
@@ -855,7 +1039,7 @@
     /********************************************************
      * (3-0) 데이터 로드 (Electron IPC)
      ********************************************************/
-    React.useEffect(() => {
+    const loadAll = () => {
       window.electronAPI.getData().then(({ calendars: cals, settings: setts }) => {
         const loadedCals = cals || [];
         setCalendars(loadedCals);
@@ -869,6 +1053,15 @@
         if (s.focusMessages && s.focusMessages.length > 0) {
           setFocusMessage(s.focusMessages[Math.floor(Math.random() * s.focusMessages.length)]);
         }
+      });
+    };
+
+    React.useEffect(() => {
+      loadAll();
+      window.electronAPI.onMenuAction((action) => {
+        if (action === 'reload') loadAll();
+        if (action === 'showStats') setShowStats(true);
+        if (action === 'showMemos') setShowMemos(true);
       });
     }, []);
 
@@ -929,6 +1122,44 @@
       } catch (err) {
         console.error('export 실패:', err);
         setExportStatus('idle');
+      }
+    };
+
+    const exportStats = async () => {
+      if (statsExportStatus === 'loading') return;
+      setStatsExportStatus('loading');
+      try {
+        const el = document.getElementById('stats-export-area');
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        const scale = 2;
+        const blob = await domtoimage.toBlob(el, {
+          bgcolor: settings.bgColor,
+          width: el.offsetWidth * scale,
+          height: el.offsetHeight * scale,
+          style: {
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            width: el.offsetWidth + 'px',
+            height: el.offsetHeight + 'px',
+          },
+        });
+        let status = 'saved';
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+          status = 'copied';
+        } catch {
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `stats-${new Date().toISOString().slice(0,10)}.png`;
+          a.click();
+          URL.revokeObjectURL(url);
+        }
+        setStatsExportStatus(status);
+        setTimeout(() => setStatsExportStatus('idle'), 2200);
+      } catch (err) {
+        console.error('stats export 실패:', err);
+        setStatsExportStatus('idle');
       }
     };
 
@@ -1605,6 +1836,139 @@
             </div>
           </div>
         )}
+
+        {/* ── 달성 통계 모달 ── */}
+        {showStats && (() => {
+          const now = new Date();
+          const thisYear = now.getFullYear();
+          const thisMonth = now.getMonth() + 1;
+          const daysThisMonth = new Date(thisYear, thisMonth, 0).getDate();
+          const daysSoFar = Math.min(now.getDate(), daysThisMonth);
+
+          return (
+            <div className="modal-overlay" onClick={() => setShowStats(false)}>
+              <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                <div id="stats-export-area" style={{ background: settings.bgColor, borderRadius: '24px', padding: '32px 28px' }}>
+                  <p className="stats-modal-title">달성 통계 · {thisYear}.{String(thisMonth).padStart(2,'0')}</p>
+                  {calendars.length === 0 ? (
+                    <p className="memos-empty">달력이 없어요.</p>
+                  ) : (
+                    <div className="stats-grid">
+                      {calendars.map(cal => {
+                        const allDates = cal.completedDates || [];
+                        const monthPrefix = `${thisYear}-${thisMonth}-`;
+                        const thisMonthDates = allDates.filter(d => d.startsWith(monthPrefix));
+                        const monthPct = daysSoFar > 0 ? Math.round((thisMonthDates.length / daysSoFar) * 100) : 0;
+                        const totalDays = allDates.length;
+                        const streak = (() => {
+                          let s = 0;
+                          const d = new Date(now);
+                          while (true) {
+                            const key = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
+                            if (allDates.includes(key)) { s++; d.setDate(d.getDate()-1); }
+                            else break;
+                          }
+                          return s;
+                        })();
+                        return (
+                          <div key={cal.id} className="stats-card">
+                            <div className="stats-card-header">
+                              <div className="stats-cal-dot" style={{ background: cal.color }} />
+                              <span className="stats-cal-name">{cal.title}</span>
+                              <span className="stats-cal-total">총 {totalDays}일</span>
+                            </div>
+                            <div className="stats-numbers">
+                              <div className="stats-num-box">
+                                <div className="stats-num-value">{thisMonthDates.length}</div>
+                                <div className="stats-num-label">이번 달</div>
+                              </div>
+                              <div className="stats-num-box">
+                                <div className="stats-num-value">{monthPct}%</div>
+                                <div className="stats-num-label">달성률</div>
+                              </div>
+                              <div className="stats-num-box">
+                                <div className="stats-num-value">{streak}</div>
+                                <div className="stats-num-label">연속</div>
+                              </div>
+                            </div>
+                            <div className="stats-bar-wrap">
+                              <div className="stats-bar-fill" style={{ width: `${monthPct}%`, background: cal.color }} />
+                            </div>
+                            <div className="stats-bar-pct">{monthPct}% · {thisMonthDates.length} / {daysSoFar}일</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+                <div style={{ padding: '16px 28px 0' }}>
+                  <button
+                    className={`stats-export-btn${statsExportStatus === 'copied' || statsExportStatus === 'saved' ? ' done' : ''}`}
+                    onClick={exportStats}
+                    disabled={statsExportStatus === 'loading'}
+                  >
+                    {statsExportStatus === 'loading' && '…'}
+                    {statsExportStatus === 'copied'  && '✓ 클립보드에 복사됨'}
+                    {statsExportStatus === 'saved'   && '✓ 저장됨'}
+                    {statsExportStatus === 'idle'    && 'export'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
+
+        {/* ── 전체 메모 모달 ── */}
+        {showMemos && (() => {
+          const allMemos = [];
+          calendars.forEach(cal => {
+            Object.entries(cal.pinnedDates || {}).forEach(([dateKey, pinData]) => {
+              const memo = typeof pinData === 'string' ? pinData : (pinData?.memo || '');
+              const img  = typeof pinData === 'string' ? null : (pinData?.image || null);
+              if (memo || img) allMemos.push({ dateKey, memo, img, calTitle: cal.title, calColor: cal.color });
+            });
+          });
+          allMemos.sort((a, b) => {
+            const [ay,am,ad] = a.dateKey.split('-').map(Number);
+            const [by,bm,bd] = b.dateKey.split('-').map(Number);
+            return new Date(by,bm-1,bd) - new Date(ay,am-1,ad);
+          });
+
+          const grouped = {};
+          allMemos.forEach(m => {
+            const [y, mo] = m.dateKey.split('-');
+            const key = `${y}.${String(mo).padStart(2,'0')}`;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(m);
+          });
+
+          return (
+            <div className="modal-overlay" onClick={() => setShowMemos(false)}>
+              <div className="memos-modal-card" onClick={(e) => e.stopPropagation()}>
+                <p className="memos-modal-title">전체 메모</p>
+                {allMemos.length === 0 ? (
+                  <p className="memos-empty">아직 메모가 없어요.</p>
+                ) : (
+                  Object.entries(grouped).map(([monthLabel, entries]) => (
+                    <div key={monthLabel}>
+                      <p className="memo-group-label">{monthLabel}</p>
+                      {entries.map((m, i) => (
+                        <div key={i} className="memo-entry">
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: m.calColor, flexShrink: 0 }} />
+                            <span className="memo-entry-date">{m.calTitle} · {m.dateKey.replace(/-/g,'.')}</span>
+                          </div>
+                          {m.memo ? <p className="memo-entry-text">{m.memo}</p> : null}
+                          {m.img  ? <img src={m.img} alt="" className="memo-entry-img" /> : null}
+                        </div>
+                      ))}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
       </div>
     );
