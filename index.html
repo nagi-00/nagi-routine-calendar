@@ -25,6 +25,16 @@
       src: url('./HJSS.ttf') format('truetype');
     }
 
+    /* ── 색상 토큰 ── */
+    :root {
+      --bg:          #EEEAE3;
+      --sh-dark:     #CEC8BE;
+      --sh-light:    #FFFFFF;
+      --text-pri:    #2C2825;
+      --text-sub:    #8C8680;
+      --text-muted:  #B8B2AA;
+    }
+
     * {
       margin: 0;
       padding: 0;
@@ -33,7 +43,7 @@
     }
 
     body {
-      background-color: #e0e5ec;
+      background-color: var(--bg);
       min-height: 100vh;
     }
 
@@ -46,7 +56,7 @@
     /* ── 사이드바 ── */
     .sidebar {
       width: 300px;
-      background: #e0e5ec;
+      background: var(--bg);
       height: 100vh;
       position: fixed;
       left: 0;
@@ -54,7 +64,8 @@
       transition: transform 0.3s ease;
       z-index: 10;
       padding: 28px 24px;
-      box-shadow: 8px 0 24px #b8bec7, -2px 0 10px #ffffff;
+      box-shadow: 8px 0 24px var(--sh-dark), -2px 0 10px var(--sh-light);
+      overflow-y: auto;
     }
     .sidebar.collapsed {
       transform: translateX(-300px);
@@ -63,7 +74,7 @@
     .sidebar-title {
       font-size: 15px;
       font-weight: 500;
-      color: #5a6478;
+      color: var(--text-sub);
       margin-bottom: 20px;
       letter-spacing: 0.08em;
     }
@@ -73,21 +84,21 @@
       left: 300px;
       top: 20px;
       z-index: 20;
-      background: #e0e5ec;
+      background: var(--bg);
       border: none;
       padding: 10px 14px;
       cursor: pointer;
       transition: left 0.3s ease;
       border-radius: 0 12px 12px 0;
-      box-shadow: 6px 4px 12px #b8bec7, -1px -4px 10px #ffffff;
-      color: #7a8499;
+      box-shadow: 6px 4px 12px var(--sh-dark), -1px -4px 10px var(--sh-light);
+      color: var(--text-sub);
       font-size: 15px;
     }
     .toggle-button.collapsed {
       left: 0;
     }
     .toggle-button:active {
-      box-shadow: inset 3px 3px 7px #b8bec7, inset -3px -3px 7px #ffffff;
+      box-shadow: inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light);
     }
 
     /* ── 메인 컨테이너 ── */
@@ -104,14 +115,23 @@
       margin-left: 0;
     }
 
+    /* ── export 래퍼 + 포스트잇 옆으로 배치 ── */
+    .export-row {
+      display: flex;
+      gap: 20px;
+      align-items: flex-start;
+      width: 100%;
+      max-width: 600px;
+    }
+
     /* ── 달력 카드 ── */
     .calendar-container {
-      background: #e0e5ec;
+      background: var(--bg);
       border-radius: 24px;
       padding: 28px 24px;
       width: 100%;
       max-width: 380px;
-      box-shadow: 10px 10px 20px #b8bec7, -10px -10px 20px #ffffff;
+      box-shadow: 10px 10px 20px var(--sh-dark), -10px -10px 20px var(--sh-light);
     }
 
     .month-navigator {
@@ -124,27 +144,27 @@
     .month-title {
       font-size: 17px;
       font-weight: 500;
-      color: #374151;
+      color: var(--text-pri);
     }
 
     .nav-button {
-      background: #e0e5ec;
+      background: var(--bg);
       border: none;
       padding: 8px 12px;
       cursor: pointer;
-      color: #7a8499;
+      color: var(--text-sub);
       font-size: 15px;
       border-radius: 10px;
-      box-shadow: 4px 4px 8px #b8bec7, -4px -4px 8px #ffffff;
+      box-shadow: 4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light);
       transition: box-shadow 0.15s ease;
     }
     .nav-button:active {
-      box-shadow: inset 4px 4px 8px #b8bec7, inset -4px -4px 8px #ffffff;
+      box-shadow: inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light);
     }
 
     .calendar-subtitle {
       font-size: 11px;
-      color: #a0aab8;
+      color: var(--text-muted);
       text-align: center;
       margin-bottom: 20px;
       letter-spacing: 0.06em;
@@ -158,6 +178,14 @@
       justify-content: center;
     }
 
+    /* 날짜 셀 래퍼 — 숫자 + pin 점 */
+    .day-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
     .calendar-day {
       width: 36px;
       height: 36px;
@@ -168,18 +196,27 @@
       border: none;
       cursor: pointer;
       border-radius: 50%;
-      background: #e0e5ec;
-      color: #4b5563;
+      background: transparent;
+      color: var(--text-pri);
       transition: box-shadow 0.15s ease;
+      touch-action: manipulation;
+      user-select: none;
     }
     .calendar-day.day-header {
       font-size: 11px;
-      color: #9ca3af;
+      color: var(--text-muted);
       cursor: default;
       background: transparent;
     }
     .calendar-day:not(.day-header):not(.day-empty):hover {
-      box-shadow: 3px 3px 7px #b8bec7, -3px -3px 7px #ffffff;
+      box-shadow: 3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light);
+    }
+
+    .pin-dot {
+      width: 4px;
+      height: 4px;
+      border-radius: 50%;
+      opacity: 0.75;
     }
 
     /* ── 달력 리스트 (사이드바) ── */
@@ -196,21 +233,77 @@
       align-items: center;
       margin-bottom: 8px;
       transition: box-shadow 0.15s ease;
-      color: #5a6478;
+      color: var(--text-sub);
       font-size: 14px;
+      gap: 8px;
     }
     .calendar-item:hover {
-      box-shadow: 3px 3px 8px #b8bec7, -3px -3px 8px #ffffff;
+      box-shadow: 3px 3px 8px var(--sh-dark), -3px -3px 8px var(--sh-light);
     }
     .calendar-item.selected {
-      box-shadow: inset 3px 3px 7px #b8bec7, inset -3px -3px 7px #ffffff;
+      box-shadow: inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light);
     }
 
-    .calendar-item .delete-button {
-      display: none;
+    .cal-item-left {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
     }
-    .calendar-item:hover .delete-button {
-      display: inline-block;
+    .cal-color-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .cal-title-text {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .cal-item-actions {
+      display: none;
+      gap: 4px;
+      flex-shrink: 0;
+    }
+    .calendar-item:hover .cal-item-actions {
+      display: flex;
+    }
+    .icon-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 12px;
+      padding: 2px 4px;
+      border-radius: 6px;
+      transition: color 0.15s;
+      font-family: 'HJSS', sans-serif;
+    }
+    .icon-btn:hover {
+      color: var(--text-sub);
+    }
+    .icon-btn.del:hover {
+      color: #C0796A;
+    }
+
+    /* ── 인라인 편집 폼 ── */
+    .cal-edit-form {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+      box-shadow: inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light);
+    }
+    .cal-edit-row {
+      display: flex;
+      gap: 6px;
+      align-items: center;
     }
 
     /* ── 새 캘린더 폼 ── */
@@ -224,14 +317,29 @@
       border: none;
       border-radius: 12px;
       margin-bottom: 12px;
-      background: #e0e5ec;
-      box-shadow: inset 4px 4px 8px #b8bec7, inset -4px -4px 8px #ffffff;
-      color: #374151;
+      background: var(--bg);
+      box-shadow: inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light);
+      color: var(--text-pri);
       outline: none;
       font-size: 14px;
+      font-family: 'HJSS', sans-serif;
     }
     .input-text::placeholder {
-      color: #a0aab8;
+      color: var(--text-muted);
+    }
+
+    .input-text-sm {
+      flex: 1;
+      padding: 7px 10px;
+      border: none;
+      border-radius: 10px;
+      background: var(--bg);
+      box-shadow: inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light);
+      color: var(--text-pri);
+      outline: none;
+      font-size: 13px;
+      font-family: 'HJSS', sans-serif;
+      min-width: 0;
     }
 
     .color-picker-container {
@@ -245,25 +353,55 @@
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      background: #e0e5ec;
-      box-shadow: 4px 4px 8px #b8bec7, -4px -4px 8px #ffffff;
+      background: var(--bg);
+      box-shadow: 4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light);
       padding: 3px;
+    }
+
+    .color-picker-sm {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background: var(--bg);
+      box-shadow: 3px 3px 6px var(--sh-dark), -3px -3px 6px var(--sh-light);
+      padding: 2px;
+      flex-shrink: 0;
     }
 
     .add-button {
       flex-grow: 1;
       padding: 10px;
-      background: #e0e5ec;
+      background: var(--bg);
       border: none;
       border-radius: 12px;
       cursor: pointer;
-      box-shadow: 4px 4px 8px #b8bec7, -4px -4px 8px #ffffff;
-      color: #7a8499;
+      box-shadow: 4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light);
+      color: var(--text-sub);
       font-size: 14px;
       transition: box-shadow 0.15s ease;
+      font-family: 'HJSS', sans-serif;
     }
     .add-button:active {
-      box-shadow: inset 4px 4px 8px #b8bec7, inset -4px -4px 8px #ffffff;
+      box-shadow: inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light);
+    }
+
+    .sm-button {
+      padding: 6px 10px;
+      background: var(--bg);
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      box-shadow: 3px 3px 6px var(--sh-dark), -3px -3px 6px var(--sh-light);
+      color: var(--text-sub);
+      font-size: 12px;
+      transition: box-shadow 0.15s ease;
+      font-family: 'HJSS', sans-serif;
+      white-space: nowrap;
+    }
+    .sm-button:active {
+      box-shadow: inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light);
     }
 
     /* ── 포커스 메시지 위젯 ── */
@@ -271,15 +409,15 @@
       width: 100%;
       max-width: 380px;
       margin-top: 20px;
-      background: #e0e5ec;
+      background: var(--bg);
       border-radius: 20px;
       padding: 20px 24px;
-      box-shadow: 8px 8px 16px #b8bec7, -8px -8px 16px #ffffff;
+      box-shadow: 8px 8px 16px var(--sh-dark), -8px -8px 16px var(--sh-light);
     }
 
     .focus-widget-label {
       font-size: 10px;
-      color: #a0aab8;
+      color: var(--text-muted);
       letter-spacing: 0.12em;
       text-transform: uppercase;
       margin-bottom: 10px;
@@ -287,7 +425,7 @@
 
     .focus-widget-text {
       font-size: 13px;
-      color: #6b7280;
+      color: var(--text-sub);
       line-height: 1.75;
     }
 
@@ -298,41 +436,173 @@
       gap: 6px;
       margin-top: 16px;
       padding: 10px 20px;
-      background: #e0e5ec;
+      background: var(--bg);
       border: none;
       border-radius: 14px;
       cursor: pointer;
-      box-shadow: 5px 5px 10px #b8bec7, -5px -5px 10px #ffffff;
-      color: #7a8499;
+      box-shadow: 5px 5px 10px var(--sh-dark), -5px -5px 10px var(--sh-light);
+      color: var(--text-sub);
       font-size: 12px;
       letter-spacing: 0.08em;
       transition: box-shadow 0.15s ease, color 0.2s ease;
       font-family: 'HJSS', sans-serif;
     }
     .export-btn:hover {
-      color: #5a6478;
+      color: var(--text-pri);
     }
     .export-btn:active {
-      box-shadow: inset 4px 4px 8px #b8bec7, inset -4px -4px 8px #ffffff;
+      box-shadow: inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light);
     }
     .export-btn.done {
       color: #6b9e7a;
     }
 
+    /* ── 포스트잇 ── */
+    .postit-col {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      padding-top: 28px;
+      flex-shrink: 0;
+    }
+
+    .postit {
+      width: 156px;
+      background: #F8F6F2;
+      border-radius: 4px 16px 16px 4px;
+      padding: 14px 14px 12px;
+      box-shadow: 5px 5px 14px var(--sh-dark), -4px -4px 10px var(--sh-light);
+      position: relative;
+      transition: box-shadow 0.2s ease;
+    }
+    .postit:hover {
+      box-shadow: 7px 7px 18px var(--sh-dark), -5px -5px 12px var(--sh-light);
+    }
+
+    .postit-header {
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.1em;
+      margin-bottom: 7px;
+    }
+
+    .postit-text {
+      font-size: 12px;
+      color: var(--text-pri);
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .postit-actions {
+      display: none;
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      gap: 4px;
+    }
+    .postit:hover .postit-actions {
+      display: flex;
+    }
+
+    .postit-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 2px 3px;
+      border-radius: 4px;
+      font-family: 'HJSS', sans-serif;
+      transition: color 0.15s;
+    }
+    .postit-btn:hover {
+      color: var(--text-sub);
+    }
+    .postit-btn.del:hover {
+      color: #C0796A;
+    }
+
+    /* ── Pin 모달 ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(238, 234, 227, 0.65);
+      backdrop-filter: blur(6px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 200;
+    }
+
+    .modal-card {
+      background: var(--bg);
+      border-radius: 20px;
+      padding: 28px 26px;
+      width: 300px;
+      box-shadow: 12px 12px 24px var(--sh-dark), -12px -12px 24px var(--sh-light);
+    }
+
+    .modal-date-label {
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.12em;
+      margin-bottom: 4px;
+    }
+
+    .modal-cal-label {
+      font-size: 13px;
+      color: var(--text-sub);
+      margin-bottom: 16px;
+    }
+
+    .modal-textarea {
+      width: 100%;
+      min-height: 110px;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 14px;
+      background: var(--bg);
+      box-shadow: inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light);
+      color: var(--text-pri);
+      outline: none;
+      font-size: 13px;
+      font-family: 'HJSS', sans-serif;
+      resize: none;
+      line-height: 1.65;
+      margin-bottom: 16px;
+    }
+    .modal-textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .modal-hint {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      letter-spacing: 0.04em;
+    }
+
     /* ── 비밀번호 화면 ── */
     .password-container {
-      background: #e0e5ec;
+      background: var(--bg);
       border-radius: 24px;
       padding: 40px 32px;
       max-width: 360px;
       margin: 100px auto;
       text-align: center;
-      box-shadow: 10px 10px 20px #b8bec7, -10px -10px 20px #ffffff;
+      box-shadow: 10px 10px 20px var(--sh-dark), -10px -10px 20px var(--sh-light);
     }
 
     .password-title {
       font-size: 15px;
-      color: #5a6478;
+      color: var(--text-sub);
       margin-bottom: 24px;
       letter-spacing: 0.05em;
     }
@@ -408,11 +678,23 @@
     const [newTitle, setNewTitle] = React.useState('');
     const [newColor, setNewColor] = React.useState('#9CA3AF');
 
+    // 인라인 편집
+    const [editingCalId, setEditingCalId] = React.useState(null);
+    const [editTitle, setEditTitle] = React.useState('');
+    const [editColor, setEditColor] = React.useState('#9CA3AF');
+
     // 포커스 메시지
     const [focusMessage, setFocusMessage] = React.useState('');
 
     // export 상태: 'idle' | 'loading' | 'copied' | 'saved'
     const [exportStatus, setExportStatus] = React.useState('idle');
+
+    // Pin 모달
+    const [pinModal, setPinModal] = React.useState({ open: false, dateKey: '', memo: '' });
+
+    // 롱프레스 감지 ref
+    const pressTimer = React.useRef(null);
+    const didLongPress = React.useRef(false);
 
     React.useEffect(() => {
       fetch('./demian_focus_messages (1).json')
@@ -435,7 +717,7 @@
       try {
         const el = document.getElementById('calendar-export-area');
         const canvas = await html2canvas(el, {
-          backgroundColor: '#e0e5ec',
+          backgroundColor: '#EEEAE3',
           scale: 2,
           useCORS: true,
           logging: false,
@@ -446,7 +728,6 @@
             await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
             status = 'copied';
           } catch {
-            // clipboard 미지원 시 파일로 다운로드
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
@@ -475,7 +756,6 @@
           });
           setCalendars(loaded);
           // 선택된 캘린더가 없을 때만 첫 번째를 기본 선택
-          // (selectedCalendar를 deps에 넣으면 클릭할 때마다 재구독되어 전환 불가)
           setSelectedCalendar(prev => prev || (loaded.length > 0 ? loaded[0].id : null));
         },
         (error) => { console.error("Firestore 구독 에러:", error); }
@@ -492,7 +772,8 @@
         await db.collection('calendars').add({
           title: newTitle,
           color: newColor,
-          completedDates: []
+          completedDates: [],
+          pinnedDates: {},
         });
         setNewTitle('');
         setNewColor('#9CA3AF');
@@ -502,7 +783,32 @@
     };
 
     /********************************************************
-     * (3-3) 날짜 토글
+     * (3-3) 달력 편집 (제목 / 색상)
+     ********************************************************/
+    const startEditCalendar = (cal, e) => {
+      e.stopPropagation();
+      setEditingCalId(cal.id);
+      setEditTitle(cal.title);
+      setEditColor(cal.color);
+    };
+
+    const saveEditCalendar = async (calId) => {
+      if (!editTitle.trim()) return;
+      try {
+        await db.collection('calendars').doc(calId).update({
+          title: editTitle,
+          color: editColor,
+        });
+        setEditingCalId(null);
+      } catch (err) {
+        console.error("달력 수정 중 에러:", err);
+      }
+    };
+
+    const cancelEditCalendar = () => setEditingCalId(null);
+
+    /********************************************************
+     * (3-4) 날짜 토글
      ********************************************************/
     const toggleDate = async (day) => {
       if (!selectedCalendar) return;
@@ -525,9 +831,10 @@
     };
 
     /********************************************************
-     * (3-4) 캘린더 삭제
+     * (3-5) 캘린더 삭제
      ********************************************************/
-    const deleteCalendar = async (calendarId) => {
+    const deleteCalendar = async (calendarId, e) => {
+      e.stopPropagation();
       const ok = window.confirm("정말 이 캘린더를 삭제할까?");
       if (!ok) return;
       try {
@@ -539,7 +846,64 @@
     };
 
     /********************************************************
-     * (3-5) 월 이동, 사이드바 토글
+     * (3-6) 롱프레스 — Pin 모달
+     ********************************************************/
+    const openPinModal = (day) => {
+      if (!selectedCalendar) return;
+      const year = currentDate.getFullYear();
+      const month = currentDate.getMonth() + 1;
+      const dateKey = `${year}-${month}-${day}`;
+      const existingMemo = (currentCalendar.pinnedDates || {})[dateKey] || '';
+      setPinModal({ open: true, dateKey, memo: existingMemo });
+    };
+
+    const savePinMemo = async () => {
+      if (!selectedCalendar) return;
+      const newPinnedDates = { ...(currentCalendar.pinnedDates || {}) };
+      if (pinModal.memo.trim()) {
+        newPinnedDates[pinModal.dateKey] = pinModal.memo.trim();
+      } else {
+        delete newPinnedDates[pinModal.dateKey];
+      }
+      try {
+        await db.collection('calendars').doc(selectedCalendar).update({ pinnedDates: newPinnedDates });
+        setPinModal({ open: false, dateKey: '', memo: '' });
+      } catch (err) {
+        console.error("핀 저장 중 에러:", err);
+      }
+    };
+
+    const removePin = async (dateKey) => {
+      if (!selectedCalendar) return;
+      const newPinnedDates = { ...(currentCalendar.pinnedDates || {}) };
+      delete newPinnedDates[dateKey];
+      try {
+        await db.collection('calendars').doc(selectedCalendar).update({ pinnedDates: newPinnedDates });
+      } catch (err) {
+        console.error("핀 제거 중 에러:", err);
+      }
+    };
+
+    const handlePressStart = (day) => {
+      didLongPress.current = false;
+      clearTimeout(pressTimer.current);
+      pressTimer.current = setTimeout(() => {
+        didLongPress.current = true;
+        openPinModal(day);
+      }, 600);
+    };
+
+    const handlePressEnd = () => {
+      clearTimeout(pressTimer.current);
+    };
+
+    const handleDayClick = (day) => {
+      if (didLongPress.current) return;
+      toggleDate(day);
+    };
+
+    /********************************************************
+     * (3-7) 월 이동, 사이드바 토글
      ********************************************************/
     const navigateMonth = (direction) => {
       setCurrentDate(prev => {
@@ -552,16 +916,32 @@
     const toggleSidebar = () => setIsSidebarCollapsed(v => !v);
 
     /********************************************************
-     * (3-6) 현재 선택된 캘린더
+     * (3-8) 현재 선택된 캘린더
      ********************************************************/
     const currentCalendar = calendars.find(cal => cal.id === selectedCalendar)
-                          || { completedDates: [], color: '#9CA3AF' };
+                          || { completedDates: [], color: '#9CA3AF', pinnedDates: {} };
 
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
     const firstDay    = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
 
+    // 이번 달 핀 목록
+    const pinnedDates = currentCalendar.pinnedDates || {};
+    const monthPrefix = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-`;
+    const currentMonthPins = Object.entries(pinnedDates)
+      .filter(([key]) => key.startsWith(monthPrefix))
+      .sort(([a], [b]) => parseInt(a.split('-')[2]) - parseInt(b.split('-')[2]));
+
+    // dateKey → 읽기 좋은 날짜 문자열
+    const formatDateKey = (dateKey) => {
+      const [year, month, day] = dateKey.split('-');
+      return `${year}. ${String(month).padStart(2, '0')}. ${String(day).padStart(2, '0')}`;
+    };
+
+    // 포스트잇 기울기 변주
+    const postitRotations = [-1.5, 1, -0.8, 1.3, -1.1, 0.7];
+
     /********************************************************
-     * (3-7) 최종 렌더링
+     * (3-9) 최종 렌더링
      ********************************************************/
     return (
       <div className="app-container">
@@ -570,23 +950,58 @@
           <p className="sidebar-title">List</p>
 
           <div className="calendar-list">
-            {calendars.map(cal => (
-              <div
-                key={cal.id}
-                className={`calendar-item ${selectedCalendar === cal.id ? 'selected' : ''}`}
-              >
-                <span onClick={() => setSelectedCalendar(cal.id)}>
-                  {cal.title}
-                </span>
-                <button
-                  className="delete-button"
-                  onClick={() => deleteCalendar(cal.id)}
-                  style={{ background: 'none', border: 'none', color: '#EF4444', cursor: 'pointer', marginLeft: '8px' }}
+            {calendars.map(cal => {
+              if (editingCalId === cal.id) {
+                return (
+                  <div key={cal.id} className="cal-edit-form">
+                    <input
+                      type="text"
+                      className="input-text-sm"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && saveEditCalendar(cal.id)}
+                      autoFocus
+                      style={{ marginBottom: 0 }}
+                    />
+                    <div className="cal-edit-row">
+                      <input
+                        type="color"
+                        className="color-picker-sm"
+                        value={editColor}
+                        onChange={(e) => setEditColor(e.target.value)}
+                      />
+                      <button className="sm-button" style={{ flex: 1 }} onClick={() => saveEditCalendar(cal.id)}>저장</button>
+                      <button className="sm-button" onClick={cancelEditCalendar}>취소</button>
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={cal.id}
+                  className={`calendar-item ${selectedCalendar === cal.id ? 'selected' : ''}`}
+                  onClick={() => setSelectedCalendar(cal.id)}
                 >
-                  ✕
-                </button>
-              </div>
-            ))}
+                  <div className="cal-item-left">
+                    <div className="cal-color-dot" style={{ background: cal.color }} />
+                    <span className="cal-title-text">{cal.title}</span>
+                  </div>
+                  <div className="cal-item-actions">
+                    <button
+                      className="icon-btn"
+                      onClick={(e) => startEditCalendar(cal, e)}
+                      title="편집"
+                    >✏</button>
+                    <button
+                      className="icon-btn del"
+                      onClick={(e) => deleteCalendar(cal.id, e)}
+                      title="삭제"
+                    >✕</button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
           <div className="new-calendar-form">
@@ -596,6 +1011,7 @@
               placeholder="Title here"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && addCalendar()}
             />
             <div className="color-picker-container">
               <input
@@ -620,70 +1036,119 @@
         {/* 메인 컨텐츠 */}
         <div className={`main-content ${isSidebarCollapsed ? 'expanded' : ''}`}>
 
-          {/* ── export 대상 영역 ── */}
-          <div id="calendar-export-area" style={{ width: '100%', maxWidth: '380px' }}>
+          {/* 달력 + 포스트잇 나란히 */}
+          <div className="export-row">
 
-            {/* 달력 카드 */}
-            <div className="calendar-container">
-              <div className="month-navigator">
-                <button className="nav-button" onClick={() => navigateMonth('prev')}>←</button>
-                <span className="month-title">
-                  {currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
-                </span>
-                <button className="nav-button" onClick={() => navigateMonth('next')}>→</button>
+            {/* ── export 대상 영역 ── */}
+            <div id="calendar-export-area" style={{ flex: '0 0 380px', maxWidth: '380px' }}>
+
+              {/* 달력 카드 */}
+              <div className="calendar-container">
+                <div className="month-navigator">
+                  <button className="nav-button" onClick={() => navigateMonth('prev')}>←</button>
+                  <span className="month-title">
+                    {currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+                  </span>
+                  <button className="nav-button" onClick={() => navigateMonth('next')}>→</button>
+                </div>
+
+                <p className="calendar-subtitle">내면의 성장을 향한 여정</p>
+
+                {/* 요일 헤더 */}
+                <div className="calendar-grid" style={{ marginBottom: '8px' }}>
+                  {['SUN','MON','TUE','WED','THU','FRI','SAT'].map(d => (
+                    <div key={d} className="calendar-day day-header">{d}</div>
+                  ))}
+                </div>
+
+                {/* 날짜 그리드 */}
+                <div className="calendar-grid">
+                  {Array(firstDay).fill(null).map((_, i) => (
+                    <div key={`empty-${i}`} className="calendar-day day-empty" />
+                  ))}
+                  {Array(daysInMonth).fill(null).map((_, i) => {
+                    const day = i + 1;
+                    const year  = currentDate.getFullYear();
+                    const month = currentDate.getMonth() + 1;
+                    const dateKey = `${year}-${month}-${day}`;
+                    const isCompleted = currentCalendar.completedDates.includes(dateKey);
+                    const isPinned = !!(pinnedDates[dateKey]);
+                    return (
+                      <div key={day} className="day-wrapper">
+                        <button
+                          className="calendar-day"
+                          onMouseDown={() => handlePressStart(day)}
+                          onMouseUp={handlePressEnd}
+                          onMouseLeave={handlePressEnd}
+                          onTouchStart={() => handlePressStart(day)}
+                          onTouchEnd={handlePressEnd}
+                          onClick={() => handleDayClick(day)}
+                          style={{
+                            backgroundColor: isCompleted ? currentCalendar.color : 'transparent',
+                            mixBlendMode: isCompleted ? 'multiply' : 'normal',
+                            color: '#2C2825',
+                            boxShadow: isCompleted
+                              ? 'inset 3px 3px 6px rgba(0,0,0,0.12), inset -2px -2px 5px rgba(255,255,255,0.25)'
+                              : '',
+                          }}
+                        >
+                          {day}
+                        </button>
+                        {isPinned && (
+                          <div
+                            className="pin-dot"
+                            style={{ backgroundColor: currentCalendar.color }}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+
               </div>
 
-              <p className="calendar-subtitle">내면의 성장을 향한 여정</p>
+              {/* 포커스 메시지 위젯 */}
+              {focusMessage && (
+                <div className="focus-widget">
+                  <p className="focus-widget-label">focus</p>
+                  <p className="focus-widget-text">{focusMessage}</p>
+                </div>
+              )}
 
-              {/* 요일 헤더 */}
-              <div className="calendar-grid" style={{ marginBottom: '8px' }}>
-                {['SUN','MON','TUE','WED','THU','FRI','SAT'].map(d => (
-                  <div key={d} className="calendar-day day-header">{d}</div>
+            </div>{/* /calendar-export-area */}
+
+            {/* ── 포스트잇 컬럼 ── */}
+            {currentMonthPins.length > 0 && (
+              <div className="postit-col">
+                {currentMonthPins.map(([dateKey, memo], idx) => (
+                  <div
+                    key={dateKey}
+                    className="postit"
+                    style={{
+                      transform: `rotate(${postitRotations[idx % postitRotations.length]}deg)`,
+                      borderTop: `3px solid ${currentCalendar.color}`,
+                    }}
+                  >
+                    <p className="postit-header">{formatDateKey(dateKey)}</p>
+                    <p className="postit-text">{memo}</p>
+                    <div className="postit-actions">
+                      <button
+                        className="postit-btn"
+                        onClick={() => setPinModal({ open: true, dateKey, memo })}
+                        title="편집"
+                      >✏</button>
+                      <button
+                        className="postit-btn del"
+                        onClick={() => removePin(dateKey)}
+                        title="삭제"
+                      >✕</button>
+                    </div>
+                  </div>
                 ))}
-              </div>
-
-              {/* 날짜 그리드 */}
-              <div className="calendar-grid">
-                {Array(firstDay).fill(null).map((_, i) => (
-                  <div key={`empty-${i}`} className="calendar-day day-empty" />
-                ))}
-                {Array(daysInMonth).fill(null).map((_, i) => {
-                  const day = i + 1;
-                  const year  = currentDate.getFullYear();
-                  const month = currentDate.getMonth() + 1;
-                  const dateKey = `${year}-${month}-${day}`;
-                  const isCompleted = currentCalendar.completedDates.includes(dateKey);
-                  return (
-                    <button
-                      key={day}
-                      className="calendar-day"
-                      onClick={() => toggleDate(day)}
-                      style={{
-                        backgroundColor: isCompleted ? currentCalendar.color : 'transparent',
-                        mixBlendMode: isCompleted ? 'multiply' : 'normal',
-                        color: '#4B5563',
-                        boxShadow: isCompleted
-                          ? 'inset 3px 3px 6px rgba(0,0,0,0.12), inset -2px -2px 5px rgba(255,255,255,0.2)'
-                          : ''
-                      }}
-                    >
-                      {day}
-                    </button>
-                  );
-                })}
-              </div>
-
-            </div>
-
-            {/* 포커스 메시지 위젯 */}
-            {focusMessage && (
-              <div className="focus-widget">
-                <p className="focus-widget-label">focus</p>
-                <p className="focus-widget-text">{focusMessage}</p>
               </div>
             )}
 
-          </div>{/* /calendar-export-area */}
+          </div>{/* /export-row */}
 
           {/* export 버튼 (캡처 대상 밖) */}
           <button
@@ -697,7 +1162,36 @@
             {exportStatus === 'idle'    && '↓ export'}
           </button>
 
-        </div>
+        </div>{/* /main-content */}
+
+        {/* ── Pin 메모 모달 ── */}
+        {pinModal.open && (
+          <div
+            className="modal-overlay"
+            onClick={() => setPinModal({ open: false, dateKey: '', memo: '' })}
+          >
+            <div className="modal-card" onClick={(e) => e.stopPropagation()}>
+              <p className="modal-date-label">{formatDateKey(pinModal.dateKey)}</p>
+              <p className="modal-cal-label">{currentCalendar.title || ''}</p>
+              <p className="modal-hint">메모를 비우고 저장하면 핀이 제거돼요.</p>
+              <textarea
+                className="modal-textarea"
+                value={pinModal.memo}
+                onChange={(e) => setPinModal(prev => ({ ...prev, memo: e.target.value }))}
+                placeholder="이 날짜에 대해 남겨두고 싶은 말"
+                autoFocus
+              />
+              <div className="modal-actions">
+                <button
+                  className="sm-button"
+                  onClick={() => setPinModal({ open: false, dateKey: '', memo: '' })}
+                >취소</button>
+                <button className="sm-button" onClick={savePinMemo}>저장</button>
+              </div>
+            </div>
+          </div>
+        )}
+
       </div>
     );
   }
