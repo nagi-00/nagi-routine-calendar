@@ -63,9 +63,13 @@
       box-shadow: 8px 0 24px var(--sh-dark), -2px 0 10px var(--sh-light);
       overflow-y: auto;
     }
-    .sidebar.collapsed {
-      transform: translateX(-300px);
+    .sidebar.collapsed { transform: translateX(-300px); }
+    .sidebar.right-side {
+      left: auto;
+      right: 0;
+      box-shadow: -8px 0 24px var(--sh-dark), 2px 0 10px var(--sh-light);
     }
+    .sidebar.right-side.collapsed { transform: translateX(300px); }
 
     .sidebar-title {
       font-size: 15px;
@@ -84,15 +88,20 @@
       border: none;
       padding: 10px 14px;
       cursor: pointer;
-      transition: left 0.3s ease;
+      transition: left 0.3s ease, right 0.3s ease;
       border-radius: 0 12px 12px 0;
       box-shadow: 6px 4px 12px var(--sh-dark), -1px -4px 10px var(--sh-light);
       color: var(--text-sub);
       font-size: 15px;
     }
-    .toggle-button.collapsed {
-      left: 0;
+    .toggle-button.collapsed { left: 0; }
+    .toggle-button.right-side {
+      left: auto;
+      right: 300px;
+      border-radius: 12px 0 0 12px;
+      box-shadow: -6px 4px 12px var(--sh-dark), 1px -4px 10px var(--sh-light);
     }
+    .toggle-button.right-side.collapsed { right: 0; }
     .toggle-button:active {
       box-shadow: inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light);
     }
@@ -102,12 +111,19 @@
       flex: 1;
       padding: 40px 20px;
       margin-left: 300px;
-      transition: margin-left 0.3s ease;
+      transition: margin-left 0.3s ease, margin-right 0.3s ease;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
     .main-content.expanded {
+      margin-left: 0;
+    }
+    .main-content.right-sidebar {
+      margin-left: 0;
+      margin-right: 300px;
+    }
+    .main-content.right-sidebar.expanded {
       margin-left: 0;
     }
 
@@ -251,12 +267,16 @@
     }
 
     .cal-item-actions {
-      display: none;
+      display: flex;
       gap: 4px;
       flex-shrink: 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.15s ease;
     }
     .calendar-item:hover .cal-item-actions {
-      display: flex;
+      opacity: 1;
+      pointer-events: auto;
     }
     .icon-btn {
       background: none;
@@ -456,7 +476,7 @@
 
     .postit {
       width: 168px;
-      background: #F5F0E8;
+      background: var(--bg);
       background-image: repeating-linear-gradient(
         to bottom,
         transparent,
@@ -748,108 +768,106 @@
     }
 
     /* ── 통계 모달 ── */
-    .stats-modal-card {
-      background: var(--bg);
-      border-radius: 24px;
-      padding: 32px 28px;
-      width: 480px;
-      max-width: 92vw;
-      max-height: 80vh;
+    .stats-scroll-wrap {
+      max-height: 88vh;
       overflow-y: auto;
-      box-shadow: 16px 16px 32px var(--sh-dark), -16px -16px 32px var(--sh-light);
-    }
-    .stats-modal-title {
-      font-size: 11px;
-      color: var(--text-muted);
-      letter-spacing: 0.14em;
-      text-transform: uppercase;
-      margin-bottom: 24px;
-    }
-    .stats-grid {
       display: flex;
       flex-direction: column;
-      gap: 14px;
-      margin-bottom: 28px;
+      gap: 16px;
+      padding: 4px;
     }
-    .stats-card {
+    /* 카드 1장 (달력 1개) */
+    .share-card {
+      width: 340px;
       background: var(--bg);
-      border-radius: 18px;
-      padding: 18px 20px;
-      box-shadow: 6px 6px 12px var(--sh-dark), -6px -6px 12px var(--sh-light);
-    }
-    .stats-card-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-    .stats-cal-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
-    .stats-cal-name {
-      font-size: 13px;
-      color: var(--text-sub);
-      flex: 1;
+      border-radius: 28px;
+      padding: 28px 26px 22px;
+      box-shadow: 14px 14px 28px var(--sh-dark), -14px -14px 28px var(--sh-light);
+      position: relative;
       overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
     }
-    .stats-cal-total {
-      font-size: 11px;
-      color: var(--text-muted);
+    /* 상단 컬러 바 */
+    .share-card-bar {
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      border-radius: 28px 28px 0 0;
     }
-    .stats-numbers {
-      display: flex;
-      gap: 12px;
-      margin-bottom: 12px;
-    }
-    .stats-num-box {
-      flex: 1;
-      background: var(--bg);
-      border-radius: 12px;
-      padding: 12px 10px;
-      text-align: center;
-      box-shadow: inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light);
-    }
-    .stats-num-value {
-      font-size: 22px;
-      font-weight: 600;
+    .share-card-title {
+      font-size: 16px;
       color: var(--text-pri);
-      line-height: 1.1;
+      margin-bottom: 3px;
+      letter-spacing: 0.02em;
+      font-weight: 500;
     }
-    .stats-num-label {
-      font-size: 9px;
-      color: var(--text-muted);
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      margin-top: 4px;
-    }
-    .stats-bar-wrap {
-      background: var(--bg);
-      border-radius: 100px;
-      height: 8px;
-      box-shadow: inset 2px 2px 4px var(--sh-dark), inset -2px -2px 4px var(--sh-light);
-      overflow: hidden;
-    }
-    .stats-bar-fill {
-      height: 100%;
-      border-radius: 100px;
-      transition: width 0.6s ease;
-    }
-    .stats-bar-pct {
+    .share-card-month {
       font-size: 10px;
       color: var(--text-muted);
-      text-align: right;
-      margin-top: 4px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
     }
+    /* 미니 캘린더 */
+    .share-mini-cal {
+      margin-bottom: 18px;
+    }
+    .share-mini-cal-header {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      margin-bottom: 6px;
+    }
+    .share-mini-dow {
+      text-align: center;
+      font-size: 8px;
+      color: var(--text-muted);
+      letter-spacing: 0.06em;
+    }
+    .share-mini-cal-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 3px;
+    }
+    .share-mini-day {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 9px;
+      color: var(--text-muted);
+      background: transparent;
+    }
+    .share-mini-day.empty { opacity: 0; pointer-events: none; }
+    .share-mini-day.done {
+      color: #fff;
+      font-weight: 600;
+      box-shadow: 2px 2px 5px var(--sh-dark), -1px -1px 3px var(--sh-light);
+    }
+    /* 하단 문구 */
+    .share-card-footer {
+      border-top: 1px solid var(--sh-dark);
+      padding-top: 14px;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .share-card-count {
+      font-size: 28px;
+      font-weight: 600;
+      color: var(--text-pri);
+      line-height: 1;
+    }
+    .share-card-suffix {
+      font-size: 12px;
+      color: var(--text-sub);
+      line-height: 1.5;
+    }
+    /* export 버튼 */
     .stats-export-btn {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 100%;
+      width: 340px;
       padding: 11px;
       background: var(--bg);
       border: none;
@@ -861,6 +879,7 @@
       letter-spacing: 0.08em;
       transition: box-shadow 0.15s ease, color 0.2s ease;
       font-family: 'HJSS', sans-serif;
+      flex-shrink: 0;
     }
     .stats-export-btn:hover { color: var(--text-pri); }
     .stats-export-btn:active {
@@ -984,6 +1003,7 @@
     bgDark: '#CEC8BE',
     bgLight: '#FFFFFF',
     subtitle: '내면의 성장을 향한 여정',
+    sidebarPosition: 'left',
     focusMessages: [
       '오늘도 한 걸음씩, 꾸준히.',
       '작은 변화가 큰 성장을 만든다.',
@@ -1407,7 +1427,7 @@
       <div className="app-container">
 
         {/* ── 사이드바 ── */}
-        <div className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''}`}>
+        <div className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''} ${settings.sidebarPosition === 'right' ? 'right-side' : ''}`}>
           <p className="sidebar-title">List</p>
 
           <div className="calendar-list">
@@ -1534,6 +1554,42 @@
                   <button className="sm-button" onClick={saveSubtitle}>저장</button>
                 </div>
 
+                {/* 사이드바 위치 */}
+                <p className="settings-section-label">sidebar</p>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                  {['left', 'right'].map(pos => {
+                    const isActive = (settings.sidebarPosition || 'left') === pos;
+                    return (
+                      <button
+                        key={pos}
+                        style={{
+                          flex: 1,
+                          padding: '8px 0',
+                          border: 'none',
+                          borderRadius: 10,
+                          cursor: 'pointer',
+                          background: 'var(--bg)',
+                          color: isActive ? 'var(--text-pri)' : 'var(--text-muted)',
+                          fontSize: 11,
+                          letterSpacing: '0.1em',
+                          fontFamily: 'HJSS, sans-serif',
+                          boxShadow: isActive
+                            ? 'inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light)'
+                            : '3px 3px 6px var(--sh-dark), -3px -3px 6px var(--sh-light)',
+                          transition: 'box-shadow 0.15s ease',
+                        }}
+                        onClick={() => {
+                          const newS = { ...settings, sidebarPosition: pos };
+                          setSettings(newS);
+                          save(null, newS);
+                        }}
+                      >
+                        {pos === 'left' ? '← 왼쪽' : '오른쪽 →'}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 {/* 포커스 메시지 */}
                 <p className="settings-section-label">focus</p>
                 <div>
@@ -1595,14 +1651,16 @@
 
         {/* 사이드바 토글 버튼 */}
         <button
-          className={`toggle-button ${isSidebarCollapsed ? 'collapsed' : ''}`}
+          className={`toggle-button ${isSidebarCollapsed ? 'collapsed' : ''} ${settings.sidebarPosition === 'right' ? 'right-side' : ''}`}
           onClick={toggleSidebar}
         >
-          {isSidebarCollapsed ? '→' : '←'}
+          {settings.sidebarPosition === 'right'
+            ? (isSidebarCollapsed ? '←' : '→')
+            : (isSidebarCollapsed ? '→' : '←')}
         </button>
 
         {/* ── 메인 컨텐츠 ── */}
-        <div className={`main-content ${isSidebarCollapsed ? 'expanded' : ''}`}>
+        <div className={`main-content ${isSidebarCollapsed ? 'expanded' : ''} ${settings.sidebarPosition === 'right' ? 'right-sidebar' : ''}`}>
 
           {/* ── export 캡처 영역 (달력 + 포스트잇 flex row) ── */}
           <div
@@ -1841,78 +1899,89 @@
         {showStats && (() => {
           const now = new Date();
           const thisYear = now.getFullYear();
-          const thisMonth = now.getMonth() + 1;
-          const daysThisMonth = new Date(thisYear, thisMonth, 0).getDate();
-          const daysSoFar = Math.min(now.getDate(), daysThisMonth);
+          const thisMonth = now.getMonth();  // 0-indexed
+          const daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
+          const firstDow = new Date(thisYear, thisMonth, 1).getDay();
+          const monthLabel = `${thisYear}년 ${thisMonth + 1}월`;
+          const DOWS = ['일','월','화','수','목','금','토'];
+
+          if (calendars.length === 0) {
+            return (
+              <div className="modal-overlay" onClick={() => setShowStats(false)}>
+                <p className="memos-empty" style={{ color: 'var(--text-muted)' }}>달력이 없어요.</p>
+              </div>
+            );
+          }
 
           return (
             <div className="modal-overlay" onClick={() => setShowStats(false)}>
-              <div onClick={(e) => e.stopPropagation()} style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                <div id="stats-export-area" style={{ background: settings.bgColor, borderRadius: '24px', padding: '32px 28px' }}>
-                  <p className="stats-modal-title">달성 통계 · {thisYear}.{String(thisMonth).padStart(2,'0')}</p>
-                  {calendars.length === 0 ? (
-                    <p className="memos-empty">달력이 없어요.</p>
-                  ) : (
-                    <div className="stats-grid">
-                      {calendars.map(cal => {
-                        const allDates = cal.completedDates || [];
-                        const monthPrefix = `${thisYear}-${thisMonth}-`;
-                        const thisMonthDates = allDates.filter(d => d.startsWith(monthPrefix));
-                        const monthPct = daysSoFar > 0 ? Math.round((thisMonthDates.length / daysSoFar) * 100) : 0;
-                        const totalDays = allDates.length;
-                        const streak = (() => {
-                          let s = 0;
-                          const d = new Date(now);
-                          while (true) {
-                            const key = `${d.getFullYear()}-${d.getMonth()+1}-${d.getDate()}`;
-                            if (allDates.includes(key)) { s++; d.setDate(d.getDate()-1); }
-                            else break;
-                          }
-                          return s;
-                        })();
-                        return (
-                          <div key={cal.id} className="stats-card">
-                            <div className="stats-card-header">
-                              <div className="stats-cal-dot" style={{ background: cal.color }} />
-                              <span className="stats-cal-name">{cal.title}</span>
-                              <span className="stats-cal-total">총 {totalDays}일</span>
-                            </div>
-                            <div className="stats-numbers">
-                              <div className="stats-num-box">
-                                <div className="stats-num-value">{thisMonthDates.length}</div>
-                                <div className="stats-num-label">이번 달</div>
-                              </div>
-                              <div className="stats-num-box">
-                                <div className="stats-num-value">{monthPct}%</div>
-                                <div className="stats-num-label">달성률</div>
-                              </div>
-                              <div className="stats-num-box">
-                                <div className="stats-num-value">{streak}</div>
-                                <div className="stats-num-label">연속</div>
-                              </div>
-                            </div>
-                            <div className="stats-bar-wrap">
-                              <div className="stats-bar-fill" style={{ width: `${monthPct}%`, background: cal.color }} />
-                            </div>
-                            <div className="stats-bar-pct">{monthPct}% · {thisMonthDates.length} / {daysSoFar}일</div>
+              <div className="stats-scroll-wrap" onClick={(e) => e.stopPropagation()}>
+
+                {/* 카드 목록 (export 대상) */}
+                <div id="stats-export-area" style={{ display: 'flex', flexDirection: 'column', gap: 16, background: 'transparent' }}>
+                  {calendars.map(cal => {
+                    const allDates = cal.completedDates || [];
+                    const monthDoneSet = new Set(
+                      allDates
+                        .filter(d => {
+                          const [y, m] = d.split('-').map(Number);
+                          return y === thisYear && m === thisMonth + 1;
+                        })
+                        .map(d => Number(d.split('-')[2]))
+                    );
+                    const count = monthDoneSet.size;
+
+                    // 미니 캘린더 셀 생성
+                    const cells = [];
+                    for (let i = 0; i < firstDow; i++) cells.push({ empty: true, day: null });
+                    for (let d = 1; d <= daysInMonth; d++) cells.push({ empty: false, day: d, done: monthDoneSet.has(d) });
+
+                    return (
+                      <div key={cal.id} className="share-card">
+                        <div className="share-card-bar" style={{ background: cal.color }} />
+
+                        <p className="share-card-title">{cal.title}</p>
+                        <p className="share-card-month">{monthLabel}</p>
+
+                        {/* 미니 캘린더 */}
+                        <div className="share-mini-cal">
+                          <div className="share-mini-cal-header">
+                            {DOWS.map(d => <span key={d} className="share-mini-dow">{d}</span>)}
                           </div>
-                        );
-                      })}
-                    </div>
-                  )}
+                          <div className="share-mini-cal-grid">
+                            {cells.map((c, i) => (
+                              <div
+                                key={i}
+                                className={`share-mini-day${c.empty ? ' empty' : ''}${c.done ? ' done' : ''}`}
+                                style={c.done ? { background: cal.color } : {}}
+                              >
+                                {c.empty ? '' : c.day}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* 하단 문구 */}
+                        <div className="share-card-footer">
+                          <span className="share-card-count" style={{ color: cal.color }}>{count}</span>
+                          <span className="share-card-suffix">이번 달에 총 {count}회 달성했어요.</span>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-                <div style={{ padding: '16px 28px 0' }}>
-                  <button
-                    className={`stats-export-btn${statsExportStatus === 'copied' || statsExportStatus === 'saved' ? ' done' : ''}`}
-                    onClick={exportStats}
-                    disabled={statsExportStatus === 'loading'}
-                  >
-                    {statsExportStatus === 'loading' && '…'}
-                    {statsExportStatus === 'copied'  && '✓ 클립보드에 복사됨'}
-                    {statsExportStatus === 'saved'   && '✓ 저장됨'}
-                    {statsExportStatus === 'idle'    && 'export'}
-                  </button>
-                </div>
+
+                {/* export 버튼 */}
+                <button
+                  className={`stats-export-btn${statsExportStatus === 'copied' || statsExportStatus === 'saved' ? ' done' : ''}`}
+                  onClick={exportStats}
+                  disabled={statsExportStatus === 'loading'}
+                >
+                  {statsExportStatus === 'loading' && '…'}
+                  {statsExportStatus === 'copied'  && '✓ 클립보드에 복사됨'}
+                  {statsExportStatus === 'saved'   && '✓ 저장됨'}
+                  {statsExportStatus === 'idle'    && 'export'}
+                </button>
               </div>
             </div>
           );
