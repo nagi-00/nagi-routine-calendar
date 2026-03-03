@@ -112,9 +112,6 @@
       width: 100%;
       max-width: 380px;
       box-shadow: 10px 10px 20px #b8bec7, -10px -10px 20px #ffffff;
-      position: relative;
-      isolation: isolate;
-      overflow: hidden;
     }
 
     .month-navigator {
@@ -477,14 +474,14 @@
             loaded.push({ id: doc.id, ...doc.data() });
           });
           setCalendars(loaded);
-          if (loaded.length > 0 && !selectedCalendar) {
-            setSelectedCalendar(loaded[0].id);
-          }
+          // 선택된 캘린더가 없을 때만 첫 번째를 기본 선택
+          // (selectedCalendar를 deps에 넣으면 클릭할 때마다 재구독되어 전환 불가)
+          setSelectedCalendar(prev => prev || (loaded.length > 0 ? loaded[0].id : null));
         },
         (error) => { console.error("Firestore 구독 에러:", error); }
       );
       return () => unsubscribe();
-    }, [selectedCalendar]);
+    }, []);  // 마운트 시 한 번만 구독
 
     /********************************************************
      * (3-2) 새 캘린더 추가
@@ -662,10 +659,11 @@
                       className="calendar-day"
                       onClick={() => toggleDate(day)}
                       style={{
-                        backgroundColor: isCompleted ? currentCalendar.color : '#e0e5ec',
-                        color: isCompleted ? 'white' : '#4B5563',
+                        backgroundColor: isCompleted ? currentCalendar.color : 'transparent',
+                        mixBlendMode: isCompleted ? 'multiply' : 'normal',
+                        color: '#4B5563',
                         boxShadow: isCompleted
-                          ? 'inset 3px 3px 6px rgba(0,0,0,0.18), inset -2px -2px 5px rgba(255,255,255,0.15)'
+                          ? 'inset 3px 3px 6px rgba(0,0,0,0.12), inset -2px -2px 5px rgba(255,255,255,0.2)'
                           : ''
                       }}
                     >
@@ -675,16 +673,6 @@
                 })}
               </div>
 
-              {/* 테마 색상 multiply 오버레이 — 항상 last child */}
-              <div style={{
-                position: 'absolute',
-                inset: 0,
-                background: currentCalendar.color,
-                mixBlendMode: 'multiply',
-                opacity: 0.18,
-                pointerEvents: 'none',
-                borderRadius: '24px',
-              }} />
             </div>
 
             {/* 포커스 메시지 위젯 */}
