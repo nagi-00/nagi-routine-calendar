@@ -8,6 +8,7 @@
     "dist": "electron-builder --win --x64"
   },
   "devDependencies": {
+    "@babel/standalone": "^7.29.1",
     "electron": "^28.3.3",
     "electron-builder": "^24.13.3"
   },
@@ -16,7 +17,14 @@
     "productName": "Nagi Calendar",
     "copyright": "Copyright © 2026 nagi",
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "favi.ico"
     },
     "nsis": {
