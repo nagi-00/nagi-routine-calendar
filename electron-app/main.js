@@ -169,11 +169,6 @@ function buildMenu() {
           label: '전체 메모 보기',
           accelerator: 'CmdOrCtrl+M',
           click: () => mainWin.webContents.send('menu:action', 'showMemos')
-        },
-        {
-          label: '달성 통계',
-          accelerator: 'CmdOrCtrl+T',
-          click: () => mainWin.webContents.send('menu:action', 'showStats')
         }
       ]
     },

@@ -771,96 +771,107 @@
       color: var(--text-sub);
     }
 
-    /* ── 통계 모달 ── */
-    .stats-scroll-wrap {
-      max-height: 88vh;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      padding: 4px;
-    }
-    /* 카드 1장 (달력 1개) */
-    .share-card {
-      width: 340px;
+    /* ── 체크리스트 ── */
+    .checklist-card {
       background: var(--bg);
-      border-radius: 28px;
-      padding: 28px 26px 22px;
-      box-shadow: 14px 14px 28px var(--sh-dark), -14px -14px 28px var(--sh-light);
-      position: relative;
-      overflow: hidden;
+      border-radius: 18px;
+      padding: 16px 18px;
+      margin-top: 14px;
+      box-shadow: 6px 6px 14px var(--sh-dark), -6px -6px 14px var(--sh-light);
+      width: 100%;
+      box-sizing: border-box;
     }
-    /* 상단 컬러 바 */
-    .share-card-bar {
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 4px;
-      border-radius: 28px 28px 0 0;
-    }
-    .share-card-title {
-      font-size: 16px;
-      color: var(--text-pri);
-      margin-bottom: 3px;
-      letter-spacing: 0.02em;
-      font-weight: 500;
-    }
-    .share-card-month {
+    .checklist-title {
       font-size: 10px;
       color: var(--text-muted);
-      letter-spacing: 0.18em;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
-    /* 미니 캘린더 */
-    .share-mini-cal {
-      margin-bottom: 18px;
-    }
-    .share-mini-cal-header {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      margin-bottom: 6px;
-    }
-    .share-mini-dow {
-      text-align: center;
-      font-size: 8px;
-      color: var(--text-muted);
-      letter-spacing: 0.06em;
-    }
-    .share-mini-cal-grid {
-      display: grid;
-      grid-template-columns: repeat(7, 1fr);
-      gap: 3px;
-    }
-    .share-mini-day {
-      aspect-ratio: 1;
-      border-radius: 50%;
+    .checklist-item {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 9px;
-      color: var(--text-muted);
-      background: transparent;
+      gap: 8px;
+      padding: 5px 0;
+      border-bottom: 1px solid var(--sh-dark);
     }
-    .share-mini-day.empty { opacity: 0; pointer-events: none; }
-    .share-mini-day.done { font-weight: 600; }
-    /* 하단 문구 */
-    .share-card-footer {
-      border-top: 1px solid var(--sh-dark);
-      padding-top: 14px;
-      display: flex;
-      align-items: baseline;
-      gap: 6px;
+    .checklist-item:last-child { border-bottom: none; }
+    .checklist-check {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      border: none;
+      background: var(--bg);
+      box-shadow: 2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: box-shadow 0.12s;
+      padding: 0;
     }
-    .share-card-count {
-      font-size: 28px;
-      font-weight: 600;
-      color: var(--text-pri);
-      line-height: 1;
+    .checklist-check.done {
+      box-shadow: inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light);
     }
-    .share-card-suffix {
+    .checklist-text {
+      flex: 1;
       font-size: 12px;
       color: var(--text-sub);
-      line-height: 1.5;
+      line-height: 1.4;
+      transition: opacity 0.15s;
+      word-break: break-all;
+    }
+    .checklist-text.done {
+      text-decoration: line-through;
+      opacity: 0.4;
+    }
+    .checklist-del {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 0 2px;
+      font-size: 14px;
+      line-height: 1;
+      opacity: 0;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+    }
+    .checklist-item:hover .checklist-del { opacity: 1; }
+    .checklist-add-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      align-items: center;
+    }
+    .checklist-input {
+      flex: 1;
+      background: var(--bg);
+      border: none;
+      border-radius: 8px;
+      padding: 5px 10px;
+      font-size: 12px;
+      color: var(--text-pri);
+      font-family: HJSS, sans-serif;
+      box-shadow: inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light);
+      outline: none;
+      min-width: 0;
+    }
+    .checklist-add-btn {
+      background: var(--bg);
+      border: none;
+      border-radius: 8px;
+      width: 28px; height: 28px;
+      cursor: pointer;
+      color: var(--text-sub);
+      font-size: 18px;
+      line-height: 1;
+      box-shadow: 2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: box-shadow 0.1s;
+      padding: 0;
+    }
+    .checklist-add-btn:active {
+      box-shadow: inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light);
     }
 
     /* ── 전체 메모 모달 ── */
@@ -1088,12 +1099,16 @@
     const [exportStatus, setExportStatus] = React.useState('idle');
 
     // Pin 모달
-    const defaultImgEdit = { rotate: 0, flipH: false, flipV: false, scale: 1.0 };
+    const defaultImgEdit = { rotate: 0, flipH: false, flipV: false, scale: 1.0, offsetX: 0, offsetY: 0 };
     const [pinModal, setPinModal] = React.useState({ open: false, dateKey: '', memo: '', image: null, imgEdit: defaultImgEdit });
+    const imgDragRef = React.useRef({ active: false, startX: 0, startY: 0, baseOffX: 0, baseOffY: 0 });
 
-    // 통계 / 전체 메모 모달
-    const [showStats, setShowStats] = React.useState(false);
+    // 전체 메모 모달
     const [showMemos, setShowMemos] = React.useState(false);
+
+    // 체크리스트
+    const [checklist, setChecklist] = React.useState([]);
+    const [newCheckItem, setNewCheckItem] = React.useState('');
 
     // 모아보기: 4개 초과 시 대표 캘린더 IDs (null = 순서대로 앞 4개)
     const [overviewPicks, setOverviewPicks] = React.useState(null);
