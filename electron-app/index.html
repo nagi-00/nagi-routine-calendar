@@ -997,22 +997,24 @@
    * 3) 앱 컴포넌트
    ********************************************************/
 
-  // ── 하트 SVG 템플릿 (블러 레이어드, 배경 투명)
-  const HEART_SVG = (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  // ── 하트 SVG — 블러 없이 깔끔한 뉴몰픽 스타일 (아이콘용으로 경계 선명)
+  const HEART_SVG = (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
     <defs>
-      <filter id="hf1" x="-70%" y="-70%" width="240%" height="240%">
-        <feGaussianBlur stdDeviation="24"/>
-      </filter>
-      <filter id="hf2" x="-50%" y="-50%" width="200%" height="200%">
-        <feGaussianBlur stdDeviation="13"/>
-      </filter>
+      <radialGradient id="hg_light" cx="36%" cy="26%" r="58%">
+        <stop offset="0%" stop-color="white" stop-opacity="0.52"/>
+        <stop offset="100%" stop-color="black" stop-opacity="0.0"/>
+      </radialGradient>
+      <radialGradient id="hg_shadow" cx="65%" cy="75%" r="55%">
+        <stop offset="0%" stop-color="black" stop-opacity="0.16"/>
+        <stop offset="100%" stop-color="black" stop-opacity="0.0"/>
+      </radialGradient>
     </defs>
-    <path d="M100 165 C100 165, 18 113, 18 70 C18 43, 38 28, 60 28 C79 28, 100 47, 100 47 C100 47, 121 28, 140 28 C162 28, 182 43, 182 70 C182 113, 100 165, 100 165 Z"
-      fill="${color}" filter="url(#hf1)" opacity="0.52"/>
-    <path d="M100 158 C100 158, 27 110, 27 70 C27 47, 45 35, 65 35 C83 35, 100 53, 100 53 C100 53, 117 35, 135 35 C155 35, 173 47, 173 70 C173 110, 100 158, 100 158 Z"
-      fill="${color}" filter="url(#hf2)" opacity="0.72"/>
-    <path d="M100 150 C100 150, 36 106, 36 70 C36 51, 51 40, 68 40 C85 40, 100 57, 100 57 C100 57, 115 40, 132 40 C149 40, 164 51, 164 70 C164 106, 100 150, 100 150 Z"
-      fill="${color}" opacity="0.62"/>
+    <path d="M50 83 C50 83, 8 56, 8 31 C8 15, 21 6, 34 6 C43 6, 50 16, 50 16 C50 16, 57 6, 66 6 C79 6, 92 15, 92 31 C92 56, 50 83, 50 83 Z"
+      fill="${color}"/>
+    <path d="M50 83 C50 83, 8 56, 8 31 C8 15, 21 6, 34 6 C43 6, 50 16, 50 16 C50 16, 57 6, 66 6 C79 6, 92 15, 92 31 C92 56, 50 83, 50 83 Z"
+      fill="url(#hg_light)"/>
+    <path d="M50 83 C50 83, 8 56, 8 31 C8 15, 21 6, 34 6 C43 6, 50 16, 50 16 C50 16, 57 6, 66 6 C79 6, 92 15, 92 31 C92 56, 50 83, 50 83 Z"
+      fill="url(#hg_shadow)"/>
   </svg>`;
 
   // ── 커스텀 폰트 적용: 'HJSS' @font-face를 동적으로 오버라이드

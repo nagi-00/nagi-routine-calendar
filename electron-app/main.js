@@ -67,7 +67,7 @@ function createTray() {
     : nativeImage.createEmpty();
 
   tray = new Tray(img);
-  tray.setToolTip('nagi : calendar');
+  tray.setToolTip('calendar');
   tray.setContextMenu(buildTrayMenu());
 
   // 클릭: 윈도우 보이기/숨기기 토글
