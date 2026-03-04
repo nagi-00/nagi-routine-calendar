@@ -838,11 +838,7 @@
       background: transparent;
     }
     .share-mini-day.empty { opacity: 0; pointer-events: none; }
-    .share-mini-day.done {
-      color: #fff;
-      font-weight: 600;
-      box-shadow: 2px 2px 5px var(--sh-dark), -1px -1px 3px var(--sh-light);
-    }
+    .share-mini-day.done { font-weight: 600; }
     /* 하단 문구 */
     .share-card-footer {
       border-top: 1px solid var(--sh-dark);
@@ -1953,7 +1949,12 @@
                               <div
                                 key={i}
                                 className={`share-mini-day${c.empty ? ' empty' : ''}${c.done ? ' done' : ''}`}
-                                style={c.done ? { background: cal.color } : {}}
+                                style={c.done ? {
+                                  backgroundColor: cal.color,
+                                  mixBlendMode: 'multiply',
+                                  color: getContrastColor(cal.color),
+                                  boxShadow: 'inset 3px 3px 6px rgba(0,0,0,0.12), inset -2px -2px 5px rgba(255,255,255,0.25)',
+                                } : {}}
                               >
                                 {c.empty ? '' : c.day}
                               </div>
