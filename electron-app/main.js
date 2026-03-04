@@ -148,7 +148,7 @@ function buildMenu() {
               type: 'info',
               title: 'nagi : calendar',
               message: `nagi : calendar  v${pkg.version}`,
-              detail: '루틴과 기록을 위한 캘린더 앱\n\nnagi-00'
+              detail: 'As time goes by,\ncolor our moments with routines and daily records.\n\nⓒ 2026. nagi All rights reserved.'
             });
           }
         }

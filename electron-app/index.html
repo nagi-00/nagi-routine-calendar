@@ -981,6 +981,7 @@
     subtitle: '내면의 성장을 향한 여정',
     sidebarPosition: 'left',
     blendMode: 'multiply',
+    weekStart: 'sun',
     focusMessages: [
       '오늘도 한 걸음씩, 꾸준히.',
       '작은 변화가 큰 성장을 만든다.',
@@ -1377,7 +1378,15 @@
                           || { completedDates: [], color: '#9CA3AF', pinnedDates: {} };
 
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
-    const firstDay    = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+    const weekStart   = settings.weekStart || 'sun';
+    const DOW_LABELS  = weekStart === 'mon'
+      ? ['MON','TUE','WED','THU','FRI','SAT','SUN']
+      : ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+    const rawFirstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+    const firstDay    = weekStart === 'mon' ? (rawFirstDay + 6) % 7 : rawFirstDay;
+    const todayObj    = new Date();
+    const todayDay    = (todayObj.getFullYear() === currentDate.getFullYear() && todayObj.getMonth() === currentDate.getMonth())
+      ? todayObj.getDate() : -1;
 
     const pinnedDates = currentCalendar.pinnedDates || {};
     const monthPrefix = `${currentDate.getFullYear()}-${currentDate.getMonth() + 1}-`;
@@ -1605,6 +1614,35 @@
                   })}
                 </div>
 
+                {/* 주 시작 요일 */}
+                <p className="settings-section-label">week start</p>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  {[{ val: 'sun', label: 'SUN' }, { val: 'mon', label: 'MON' }].map(opt => {
+                    const isActive = (settings.weekStart || 'sun') === opt.val;
+                    return (
+                      <button
+                        key={opt.val}
+                        style={{
+                          flex: 1, padding: '8px 0', border: 'none', borderRadius: 10,
+                          cursor: 'pointer', background: 'var(--bg)',
+                          color: isActive ? 'var(--text-pri)' : 'var(--text-muted)',
+                          fontSize: 11, letterSpacing: '0.1em',
+                          fontFamily: 'HJSS, sans-serif',
+                          boxShadow: isActive
+                            ? 'inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light)'
+                            : '3px 3px 6px var(--sh-dark), -3px -3px 6px var(--sh-light)',
+                          transition: 'box-shadow 0.15s ease',
+                        }}
+                        onClick={() => {
+                          const newS = { ...settings, weekStart: opt.val };
+                          setSettings(newS);
+                          save(null, newS);
+                        }}
+                      >{opt.label}</button>
+                    );
+                  })}
+                </div>
+
                 {/* 색상 혼합 모드 */}
                 <p className="settings-section-label">color blend</p>
                 <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
@@ -1729,7 +1767,12 @@
               {/* 헤더 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                 <button className="nav-button" onClick={() => navigateMonth('prev')}>←</button>
-                <span className="month-title">
+                <span
+                  className="month-title"
+                  onClick={() => setCurrentDate(new Date())}
+                  title="오늘로 이동"
+                  style={{ cursor: 'pointer' }}
+                >
                   {currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
                 </span>
                 <button className="nav-button" onClick={() => navigateMonth('next')}>→</button>
@@ -1777,7 +1820,7 @@
               <div className="calendar-container" style={{ maxWidth: 340 }}>
                 {/* 요일 헤더 */}
                 <div className="calendar-grid" style={{ marginBottom: 8 }}>
-                  {['SUN','MON','TUE','WED','THU','FRI','SAT'].map(d => (
+                  {DOW_LABELS.map(d => (
                     <div key={d} className="calendar-day day-header">{d}</div>
                   ))}
                 </div>
@@ -1850,7 +1893,12 @@
               <div className="calendar-container">
                 <div className="month-navigator">
                   <button className="nav-button" onClick={() => navigateMonth('prev')}>←</button>
-                  <span className="month-title">
+                  <span
+                    className="month-title"
+                    onClick={() => setCurrentDate(new Date())}
+                    title="오늘로 이동"
+                    style={{ cursor: 'pointer' }}
+                  >
                     {currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
                   </span>
                   <button className="nav-button" onClick={() => navigateMonth('next')}>→</button>
@@ -1860,7 +1908,7 @@
 
                 {/* 요일 헤더 */}
                 <div className="calendar-grid" style={{ marginBottom: '8px' }}>
-                  {['SUN','MON','TUE','WED','THU','FRI','SAT'].map(d => (
+                  {DOW_LABELS.map(d => (
                     <div key={d} className="calendar-day day-header">{d}</div>
                   ))}
                 </div>
@@ -1877,6 +1925,7 @@
                     const dateKey = `${year}-${month}-${day}`;
                     const isCompleted = currentCalendar.completedDates.includes(dateKey);
                     const isPinned = !!(pinnedDates[dateKey]);
+                    const isToday = day === todayDay;
                     return (
                       <div key={day} className="day-wrapper">
                         <button
@@ -1891,9 +1940,10 @@
                             backgroundColor: isCompleted ? currentCalendar.color : 'transparent',
                             mixBlendMode: isCompleted ? (settings.blendMode || 'multiply') : 'normal',
                             color: isCompleted ? getContrastColor(currentCalendar.color) : '#2C2825',
+                            fontWeight: isToday ? 700 : 'normal',
                             boxShadow: isCompleted
                               ? 'inset 3px 3px 6px rgba(0,0,0,0.12), inset -2px -2px 5px rgba(255,255,255,0.25)'
-                              : '',
+                              : isToday ? '3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light)' : '',
                           }}
                         >
                           {day}
@@ -2109,9 +2159,12 @@
           const thisYear = now.getFullYear();
           const thisMonth = now.getMonth();  // 0-indexed
           const daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
-          const firstDow = new Date(thisYear, thisMonth, 1).getDay();
+          const rawFirstDow = new Date(thisYear, thisMonth, 1).getDay();
+          const firstDow = weekStart === 'mon' ? (rawFirstDow + 6) % 7 : rawFirstDow;
           const monthLabel = `${thisYear}년 ${thisMonth + 1}월`;
-          const DOWS = ['일','월','화','수','목','금','토'];
+          const DOWS = weekStart === 'mon'
+            ? ['월','화','수','목','금','토','일']
+            : ['일','월','화','수','목','금','토'];
 
           if (calendars.length === 0) {
             return (
