@@ -1892,10 +1892,12 @@
               borderRadius: '32px',
               padding: '32px',
               width: '444px',
+              maxWidth: '444px',
               boxSizing: 'border-box',
               flexShrink: 0,
+              overflow: 'hidden',
             }}>
-              <div className="calendar-container" style={{ width: '100%', maxWidth: 'none' }}>
+              <div className="calendar-container" style={{ width: '100%', maxWidth: 'none', boxSizing: 'border-box' }}>
 
                 {/* 월 내비게이터 */}
                 <div className="month-navigator">
@@ -1941,10 +1943,11 @@
                               boxShadow: isPicked
                                 ? 'inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light)'
                                 : '2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light)',
+                              maxWidth: '120px', overflow: 'hidden',
                             }}
                           >
                             <div style={{ width: 6, height: 6, borderRadius: '50%', background: cal.color, flexShrink: 0 }} />
-                            {cal.title}
+                            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cal.title}</span>
                           </button>
                         );
                       })}

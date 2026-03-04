@@ -195,8 +195,8 @@ function buildMenu() {
           click: () => {
             dialog.showMessageBox(mainWin, {
               type: 'info',
-              title: 'nagi : calendar',
-              message: `nagi : calendar  v${pkg.version}`,
+              title: 'nagi calendar',
+              message: `nagi calendar  v${pkg.version}`,
               detail: 'As time goes by,\ncolor our moments with routines and daily records.\n\nⓒ 2026. nagi All rights reserved.'
             });
           }
@@ -218,7 +218,7 @@ function createWindow() {
     minWidth: 780,
     minHeight: 560,
     backgroundColor: '#EEEAE3',
-    title: 'nagi : calendar',
+    title: 'nagi calendar',
     ...(iconPath ? { icon: iconPath } : {}),
     show: false,
     webPreferences: {
