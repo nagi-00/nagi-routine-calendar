@@ -1891,9 +1891,11 @@
               background: settings.bgColor || '#EEEAE3',
               borderRadius: '32px',
               padding: '32px',
-              display: 'inline-block',
+              width: '444px',
+              boxSizing: 'border-box',
+              flexShrink: 0,
             }}>
-              <div className="calendar-container">
+              <div className="calendar-container" style={{ width: '100%', maxWidth: 'none' }}>
 
                 {/* 월 내비게이터 */}
                 <div className="month-navigator">

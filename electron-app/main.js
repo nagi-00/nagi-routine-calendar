@@ -43,8 +43,15 @@ let isQuitting = false;
 
 function showWindow() {
   if (!mainWin) return;
+  mainWin.setSkipTaskbar(false);
   mainWin.show();
   mainWin.focus();
+}
+
+function hideWindow() {
+  if (!mainWin) return;
+  mainWin.setSkipTaskbar(true);
+  mainWin.hide();
 }
 
 function buildTrayMenu() {
@@ -74,7 +81,7 @@ function createTray() {
   tray.on('click', () => {
     if (!mainWin) return;
     if (mainWin.isVisible()) {
-      mainWin.hide();
+      hideWindow();
     } else {
       showWindow();
     }
@@ -227,7 +234,7 @@ function createWindow() {
   // 최소화 → 트레이로 숨기기
   mainWin.on('minimize', (e) => {
     e.preventDefault();
-    mainWin.hide();
+    hideWindow();
   });
 
   // X 버튼 → 실제 종료
