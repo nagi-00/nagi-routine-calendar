@@ -1879,77 +1879,82 @@
 
         {/* ──── 모아보기 ──── */}
         {selectedCalendar === 'all' ? (() => {
+          // 4개 이하: 전체 표시 / 5개 이상: overviewPicks 우선 (null이면 앞 4개, []이면 아무것도 안 보임)
           const activeCals = calendars.length > 4
-            ? (() => {
-                const picks = overviewPicks && overviewPicks.length > 0
-                  ? overviewPicks
-                  : calendars.slice(0, 4).map(c => c.id);
-                return calendars.filter(c => picks.includes(c.id));
-              })()
+            ? calendars.filter(c => (overviewPicks ?? calendars.slice(0, 4).map(c => c.id)).includes(c.id))
             : calendars;
 
           return (
-            <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {/* 헤더 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <button className="nav-button" onClick={() => navigateMonth('prev')}>←</button>
-                <span
-                  className="month-title"
-                  onClick={() => setCurrentDate(new Date())}
-                  title="오늘로 이동"
-                  style={{ cursor: 'pointer' }}
-                >
-                  {currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
-                </span>
-                <button className="nav-button" onClick={() => navigateMonth('next')}>→</button>
-              </div>
+            <div style={{
+              background: settings.bgColor || '#EEEAE3',
+              borderRadius: '32px',
+              padding: '32px',
+              display: 'inline-block',
+            }}>
+              <div className="calendar-container">
 
-              {/* 4개 초과일 때 캘린더 선택 */}
-              {calendars.length > 4 && (
-                <div>
-                  <p className="settings-section-label" style={{ marginBottom: 8 }}>표시할 캘린더 (최대 4개)</p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                    {calendars.map(cal => {
-                      const curPicks = overviewPicks || calendars.slice(0, 4).map(c => c.id);
-                      const isPicked = curPicks.includes(cal.id);
-                      return (
-                        <button
-                          key={cal.id}
-                          onClick={() => {
-                            const cur = overviewPicks || calendars.slice(0, 4).map(c => c.id);
-                            if (isPicked) {
-                              setOverviewPicks(cur.filter(id => id !== cal.id));
-                            } else {
-                              if (cur.length < 4) setOverviewPicks([...cur, cal.id]);
-                            }
-                          }}
-                          style={{
-                            display: 'flex', alignItems: 'center', gap: 5,
-                            padding: '5px 10px', border: 'none', borderRadius: 8, cursor: 'pointer',
-                            background: 'var(--bg)', fontFamily: 'HJSS, sans-serif', fontSize: 11,
-                            color: isPicked ? 'var(--text-pri)' : 'var(--text-muted)',
-                            boxShadow: isPicked
-                              ? 'inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light)'
-                              : '2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light)',
-                          }}
-                        >
-                          <div style={{ width: 7, height: 7, borderRadius: '50%', background: cal.color, flexShrink: 0 }} />
-                          {cal.title}
-                        </button>
-                      );
-                    })}
-                  </div>
+                {/* 월 내비게이터 */}
+                <div className="month-navigator">
+                  <button className="nav-button" onClick={() => navigateMonth('prev')}>←</button>
+                  <span
+                    className="month-title"
+                    onClick={() => setCurrentDate(new Date())}
+                    title="오늘로 이동"
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+                  </span>
+                  <button className="nav-button" onClick={() => navigateMonth('next')}>→</button>
                 </div>
-              )}
 
-              {/* 캘린더 그리드 */}
-              <div className="calendar-container" style={{ maxWidth: 340 }}>
+                <p className="calendar-subtitle">모아보기</p>
+
+                {/* 4개 초과일 때 캘린더 선택 */}
+                {calendars.length > 4 && (
+                  <div style={{ marginBottom: 12 }}>
+                    <p className="settings-section-label" style={{ marginBottom: 6 }}>표시할 캘린더 (최대 4개)</p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5 }}>
+                      {calendars.map(cal => {
+                        const curPicks = overviewPicks ?? calendars.slice(0, 4).map(c => c.id);
+                        const isPicked = curPicks.includes(cal.id);
+                        return (
+                          <button
+                            key={cal.id}
+                            onClick={() => {
+                              const cur = overviewPicks ?? calendars.slice(0, 4).map(c => c.id);
+                              if (isPicked) {
+                                // 선택 해제 — 결과가 []이어도 그대로 저장 (아무것도 안 보임)
+                                setOverviewPicks(cur.filter(id => id !== cal.id));
+                              } else {
+                                if (cur.length < 4) setOverviewPicks([...cur, cal.id]);
+                              }
+                            }}
+                            style={{
+                              display: 'flex', alignItems: 'center', gap: 5,
+                              padding: '4px 9px', border: 'none', borderRadius: 8, cursor: 'pointer',
+                              background: 'var(--bg)', fontFamily: 'HJSS, sans-serif', fontSize: 10,
+                              color: isPicked ? 'var(--text-pri)' : 'var(--text-muted)',
+                              boxShadow: isPicked
+                                ? 'inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light)'
+                                : '2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light)',
+                            }}
+                          >
+                            <div style={{ width: 6, height: 6, borderRadius: '50%', background: cal.color, flexShrink: 0 }} />
+                            {cal.title}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {/* 요일 헤더 */}
                 <div className="calendar-grid" style={{ marginBottom: 8 }}>
                   {DOW_LABELS.map(d => (
                     <div key={d} className="calendar-day day-header">{d}</div>
                   ))}
                 </div>
+
                 {/* 날짜 그리드 */}
                 <div className="calendar-grid">
                   {Array(firstDay).fill(null).map((_, i) => (
@@ -1962,11 +1967,17 @@
                     const dateKey = `${year}-${month}-${day}`;
                     const doneCals = activeCals.filter(c => c.completedDates.includes(dateKey));
                     const colors = doneCals.map(c => c.color);
+                    const isToday = day === todayDay;
                     return (
-                      <div key={day} className="day-wrapper" style={{ position: 'relative' }}>
+                      <div key={day} className="day-wrapper">
                         <button
                           className="calendar-day"
-                          style={{ color: '#2C2825', position: 'relative' }}
+                          style={{
+                            color: '#2C2825',
+                            fontWeight: isToday ? 700 : 'normal',
+                            boxShadow: isToday ? '3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light)' : '',
+                            position: 'relative',
+                          }}
                           disabled
                         >
                           {day}
@@ -1974,8 +1985,7 @@
                             <div style={{
                               position: 'absolute', bottom: 2, right: 2,
                               mixBlendMode: settings.blendMode || 'multiply',
-                              borderRadius: '50%', overflow: 'hidden',
-                              lineHeight: 0,
+                              borderRadius: '50%', overflow: 'hidden', lineHeight: 0,
                             }}>
                               <CloverDot colors={colors} />
                             </div>
@@ -1985,16 +1995,17 @@
                     );
                   })}
                 </div>
-              </div>
 
-              {/* 범례 */}
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
-                {activeCals.map(cal => (
-                  <div key={cal.id} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: cal.color }} />
-                    <span style={{ fontSize: 11, color: 'var(--text-sub)', fontFamily: 'HJSS, sans-serif' }}>{cal.title}</span>
-                  </div>
-                ))}
+                {/* 범례 */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 14px', marginTop: 16 }}>
+                  {activeCals.map(cal => (
+                    <div key={cal.id} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: cal.color }} />
+                      <span style={{ fontSize: 10, color: 'var(--text-sub)', fontFamily: 'HJSS, sans-serif' }}>{cal.title}</span>
+                    </div>
+                  ))}
+                </div>
+
               </div>
             </div>
           );

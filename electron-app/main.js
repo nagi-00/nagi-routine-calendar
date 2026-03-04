@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, dialog, shell, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, Tray, dialog, shell, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -37,7 +37,49 @@ function saveData(data) {
 }
 
 let mainWin = null;
+let tray = null;
 let alwaysOnTopEnabled = false;
+let isQuitting = false;
+
+function showWindow() {
+  if (!mainWin) return;
+  mainWin.show();
+  mainWin.focus();
+}
+
+function buildTrayMenu() {
+  return Menu.buildFromTemplate([
+    { label: '열기', click: showWindow },
+    { type: 'separator' },
+    { label: '종료', click: () => { isQuitting = true; app.quit(); } },
+  ]);
+}
+
+function createTray() {
+  let iconPath;
+  try {
+    iconPath = path.join(__dirname, 'favi.ico');
+    if (!fs.existsSync(iconPath)) iconPath = undefined;
+  } catch { iconPath = undefined; }
+
+  const img = iconPath
+    ? nativeImage.createFromPath(iconPath)
+    : nativeImage.createEmpty();
+
+  tray = new Tray(img);
+  tray.setToolTip('nagi : calendar');
+  tray.setContextMenu(buildTrayMenu());
+
+  // 클릭: 윈도우 보이기/숨기기 토글
+  tray.on('click', () => {
+    if (!mainWin) return;
+    if (mainWin.isVisible()) {
+      mainWin.hide();
+    } else {
+      showWindow();
+    }
+  });
+}
 
 function buildMenu() {
   const template = [
@@ -182,9 +224,28 @@ function createWindow() {
   mainWin.loadFile(path.join(__dirname, 'index.html'));
   mainWin.once('ready-to-show', () => mainWin.show());
 
+  // 최소화 → 트레이로 숨기기
+  mainWin.on('minimize', (e) => {
+    e.preventDefault();
+    mainWin.hide();
+  });
+
+  // X 버튼 → 실제 종료
+  mainWin.on('close', (e) => {
+    if (!isQuitting) {
+      // macOS: 창 닫기는 숨기기(Dock 동작 유지)
+      // Windows/Linux: 실제 종료
+      if (process.platform === 'darwin') {
+        e.preventDefault();
+        mainWin.hide();
+      }
+    }
+  });
+
   Menu.setApplicationMenu(buildMenu());
 }
 
+// ── IPC 핸들러 ──────────────────────────────────────
 ipcMain.handle('data:get', () => loadData());
 ipcMain.handle('data:save', (_, data) => { saveData(data); return true; });
 
@@ -200,20 +261,33 @@ ipcMain.handle('dialog:font', async () => {
 ipcMain.handle('icon:set', (_, dataUrl) => {
   try {
     const img = nativeImage.createFromDataURL(dataUrl);
-    if (!img.isEmpty()) mainWin.setIcon(img);
+    if (!img.isEmpty()) {
+      mainWin.setIcon(img);
+      if (tray) tray.setImage(img);
+    }
   } catch (e) {
     console.error('setIcon error:', e);
   }
   return true;
 });
 
+// ── 앱 시작 ─────────────────────────────────────────
 app.whenReady().then(() => {
   createWindow();
+  createTray();
+
   app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    // macOS: Dock 클릭 시 창 보이기
+    showWindow();
   });
 });
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') app.quit();
+  // 트레이가 살아있는 경우 앱을 종료하지 않음 (Windows/Linux)
+  // 종료는 트레이 메뉴의 "종료" 또는 isQuitting flag로만
+  if (process.platform === 'darwin') app.quit();
+});
+
+app.on('before-quit', () => {
+  isQuitting = true;
 });
