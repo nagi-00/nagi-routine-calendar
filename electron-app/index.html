@@ -982,6 +982,8 @@
     sidebarPosition: 'left',
     blendMode: 'multiply',
     weekStart: 'sun',
+    customFontPath: null,
+    iconColor: '#F4A0AE',
     focusMessages: [
       '오늘도 한 걸음씩, 꾸준히.',
       '작은 변화가 큰 성장을 만든다.',
@@ -994,6 +996,67 @@
   /********************************************************
    * 3) 앱 컴포넌트
    ********************************************************/
+
+  // ── 하트 SVG 템플릿 (블러 레이어드, 배경 투명)
+  const HEART_SVG = (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+    <defs>
+      <filter id="hf1" x="-70%" y="-70%" width="240%" height="240%">
+        <feGaussianBlur stdDeviation="24"/>
+      </filter>
+      <filter id="hf2" x="-50%" y="-50%" width="200%" height="200%">
+        <feGaussianBlur stdDeviation="13"/>
+      </filter>
+    </defs>
+    <path d="M100 165 C100 165, 18 113, 18 70 C18 43, 38 28, 60 28 C79 28, 100 47, 100 47 C100 47, 121 28, 140 28 C162 28, 182 43, 182 70 C182 113, 100 165, 100 165 Z"
+      fill="${color}" filter="url(#hf1)" opacity="0.52"/>
+    <path d="M100 158 C100 158, 27 110, 27 70 C27 47, 45 35, 65 35 C83 35, 100 53, 100 53 C100 53, 117 35, 135 35 C155 35, 173 47, 173 70 C173 110, 100 158, 100 158 Z"
+      fill="${color}" filter="url(#hf2)" opacity="0.72"/>
+    <path d="M100 150 C100 150, 36 106, 36 70 C36 51, 51 40, 68 40 C85 40, 100 57, 100 57 C100 57, 115 40, 132 40 C149 40, 164 51, 164 70 C164 106, 100 150, 100 150 Z"
+      fill="${color}" opacity="0.62"/>
+  </svg>`;
+
+  // ── 커스텀 폰트 적용: 'HJSS' @font-face를 동적으로 오버라이드
+  function applyFont(fontPath) {
+    let el = document.getElementById('custom-font-style');
+    if (!el) {
+      el = document.createElement('style');
+      el.id = 'custom-font-style';
+      document.head.appendChild(el);
+    }
+    if (fontPath) {
+      const fileUrl = 'file:///' + fontPath.replace(/\\/g, '/');
+      el.textContent = `@font-face { font-family: 'HJSS'; src: url('${fileUrl}'); }`;
+    } else {
+      el.textContent = '';
+    }
+  }
+
+  // ── 하트 PNG 생성 (SVG → canvas → dataURL)
+  function generateIconPng(color, size = 256) {
+    return new Promise((resolve, reject) => {
+      const svgStr = HEART_SVG(color);
+      const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        canvas.getContext('2d').drawImage(img, 0, 0, size, size);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  // ── 앱 아이콘 색상 적용
+  function applyIconColor(color) {
+    generateIconPng(color).then(dataUrl => {
+      window.electronAPI.setAppIcon(dataUrl);
+    }).catch(e => console.error('icon update error:', e));
+  }
+
   function App() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
     const [currentDate, setCurrentDate] = React.useState(new Date());
@@ -1050,6 +1113,8 @@
         setSettings(s);
         setEditSubtitle(s.subtitle);
         applyTheme(s);
+        if (s.customFontPath) applyFont(s.customFontPath);
+        if (s.iconColor) applyIconColor(s.iconColor);
 
         if (s.focusMessages && s.focusMessages.length > 0) {
           setFocusMessage(s.focusMessages[Math.floor(Math.random() * s.focusMessages.length)]);
@@ -1677,6 +1742,67 @@
                       </button>
                     );
                   })}
+                </div>
+
+                {/* 폰트 */}
+                <p className="settings-section-label">font</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+                  <span style={{
+                    flex: 1, fontSize: 10, color: 'var(--text-sub)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {settings.customFontPath
+                      ? settings.customFontPath.replace(/\\/g, '/').split('/').pop()
+                      : 'HJSS (기본)'}
+                  </span>
+                  <button
+                    className="sm-button"
+                    onClick={async () => {
+                      const p = await window.electronAPI.showFontDialog();
+                      if (p) {
+                        applyFont(p);
+                        const newS = { ...settings, customFontPath: p };
+                        setSettings(newS);
+                        save(null, newS);
+                      }
+                    }}
+                  >선택</button>
+                  {settings.customFontPath && (
+                    <button
+                      className="sm-button"
+                      onClick={() => {
+                        applyFont(null);
+                        const newS = { ...settings, customFontPath: null };
+                        setSettings(newS);
+                        save(null, newS);
+                      }}
+                    >초기화</button>
+                  )}
+                </div>
+
+                {/* 아이콘 컬러 */}
+                <p className="settings-section-label">icon</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <div
+                    style={{ width: 44, height: 44, flexShrink: 0 }}
+                    dangerouslySetInnerHTML={{ __html: HEART_SVG(settings.iconColor || '#F4A0AE') }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <input
+                      type="color"
+                      value={settings.iconColor || '#F4A0AE'}
+                      style={{ width: 44, height: 26, border: 'none', borderRadius: 6, cursor: 'pointer', padding: 0, background: 'none' }}
+                      onBlur={(e) => {
+                        const color = e.target.value;
+                        const newS = { ...settings, iconColor: color };
+                        setSettings(newS);
+                        save(null, newS);
+                        applyIconColor(color);
+                      }}
+                      onChange={(e) => setSettings(prev => ({ ...prev, iconColor: e.target.value }))}
+                    />
+                    <span style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>앱 아이콘</span>
+                  </div>
                 </div>
 
                 {/* 포커스 메시지 */}

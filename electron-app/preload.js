@@ -5,5 +5,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveData: (data) => ipcRenderer.invoke('data:save', data),
   onMenuAction: (callback) => {
     ipcRenderer.on('menu:action', (_, action) => callback(action));
-  }
+  },
+  showFontDialog: () => ipcRenderer.invoke('dialog:font'),
+  setAppIcon: (dataUrl) => ipcRenderer.invoke('icon:set', dataUrl),
 });

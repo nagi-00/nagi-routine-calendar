@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Menu, dialog, shell } = require('electron');
+const { app, BrowserWindow, ipcMain, Menu, dialog, shell, nativeImage } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -187,6 +187,25 @@ function createWindow() {
 
 ipcMain.handle('data:get', () => loadData());
 ipcMain.handle('data:save', (_, data) => { saveData(data); return true; });
+
+ipcMain.handle('dialog:font', async () => {
+  const result = await dialog.showOpenDialog(mainWin, {
+    title: '폰트 파일을 선택하세요',
+    properties: ['openFile'],
+    filters: [{ name: 'Font Files', extensions: ['ttf', 'otf', 'woff', 'woff2'] }],
+  });
+  return result.canceled ? null : result.filePaths[0];
+});
+
+ipcMain.handle('icon:set', (_, dataUrl) => {
+  try {
+    const img = nativeImage.createFromDataURL(dataUrl);
+    if (!img.isEmpty()) mainWin.setIcon(img);
+  } catch (e) {
+    console.error('setIcon error:', e);
+  }
+  return true;
+});
 
 app.whenReady().then(() => {
   createWindow();
