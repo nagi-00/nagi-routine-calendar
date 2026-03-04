@@ -221,6 +221,10 @@
       border-radius: 50%;
       opacity: 0.75;
     }
+    .calendar-day:disabled {
+      cursor: default;
+      opacity: 1;
+    }
 
     /* ── 달력 리스트 (사이드바) ── */
     .calendar-list {
@@ -858,30 +862,6 @@
       color: var(--text-sub);
       line-height: 1.5;
     }
-    /* export 버튼 */
-    .stats-export-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 340px;
-      padding: 11px;
-      background: var(--bg);
-      border: none;
-      border-radius: 12px;
-      cursor: pointer;
-      box-shadow: 4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light);
-      color: var(--text-sub);
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      transition: box-shadow 0.15s ease, color 0.2s ease;
-      font-family: 'HJSS', sans-serif;
-      flex-shrink: 0;
-    }
-    .stats-export-btn:hover { color: var(--text-pri); }
-    .stats-export-btn:active {
-      box-shadow: inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light);
-    }
-    .stats-export-btn.done { color: #6b9e7a; }
 
     /* ── 전체 메모 모달 ── */
     .memos-modal-card {
@@ -1000,6 +980,7 @@
     bgLight: '#FFFFFF',
     subtitle: '내면의 성장을 향한 여정',
     sidebarPosition: 'left',
+    blendMode: 'multiply',
     focusMessages: [
       '오늘도 한 걸음씩, 꾸준히.',
       '작은 변화가 큰 성장을 만든다.',
@@ -1039,14 +1020,17 @@
 
     // export 상태: 'idle' | 'loading' | 'copied' | 'saved'
     const [exportStatus, setExportStatus] = React.useState('idle');
-    const [statsExportStatus, setStatsExportStatus] = React.useState('idle');
 
     // Pin 모달
-    const [pinModal, setPinModal] = React.useState({ open: false, dateKey: '', memo: '', image: null });
+    const defaultImgEdit = { rotate: 0, flipH: false, flipV: false, scale: 1.0 };
+    const [pinModal, setPinModal] = React.useState({ open: false, dateKey: '', memo: '', image: null, imgEdit: defaultImgEdit });
 
     // 통계 / 전체 메모 모달
     const [showStats, setShowStats] = React.useState(false);
     const [showMemos, setShowMemos] = React.useState(false);
+
+    // 모아보기: 4개 초과 시 대표 캘린더 IDs (null = 순서대로 앞 4개)
+    const [overviewPicks, setOverviewPicks] = React.useState(null);
 
     // 롱프레스 감지 ref
     const pressTimer = React.useRef(null);
@@ -1141,42 +1125,29 @@
       }
     };
 
-    const exportStats = async () => {
-      if (statsExportStatus === 'loading') return;
-      setStatsExportStatus('loading');
-      try {
-        const el = document.getElementById('stats-export-area');
-        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
-        const scale = 2;
-        const blob = await domtoimage.toBlob(el, {
-          bgcolor: settings.bgColor,
-          width: el.offsetWidth * scale,
-          height: el.offsetHeight * scale,
-          style: {
-            transform: `scale(${scale})`,
-            transformOrigin: 'top left',
-            width: el.offsetWidth + 'px',
-            height: el.offsetHeight + 'px',
-          },
-        });
-        let status = 'saved';
-        try {
-          await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          status = 'copied';
-        } catch {
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `stats-${new Date().toISOString().slice(0,10)}.png`;
-          a.click();
-          URL.revokeObjectURL(url);
-        }
-        setStatsExportStatus(status);
-        setTimeout(() => setStatsExportStatus('idle'), 2200);
-      } catch (err) {
-        console.error('stats export 실패:', err);
-        setStatsExportStatus('idle');
-      }
+    const applyImageTransforms = (dataUrl, { rotate, flipH, flipV, scale }) => {
+      return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+          const rad = (rotate * Math.PI) / 180;
+          const sin = Math.abs(Math.sin(rad));
+          const cos = Math.abs(Math.cos(rad));
+          const sw = img.width * scale;
+          const sh = img.height * scale;
+          const cw = Math.round(sw * cos + sh * sin);
+          const ch = Math.round(sw * sin + sh * cos);
+          const canvas = document.createElement('canvas');
+          canvas.width = cw;
+          canvas.height = ch;
+          const ctx = canvas.getContext('2d');
+          ctx.translate(cw / 2, ch / 2);
+          ctx.rotate(rad);
+          ctx.scale(flipH ? -scale : scale, flipV ? -scale : scale);
+          ctx.drawImage(img, -img.width / 2, -img.height / 2);
+          resolve(canvas.toDataURL('image/jpeg', 0.88));
+        };
+        img.src = dataUrl;
+      });
     };
 
     /********************************************************
@@ -1270,14 +1241,19 @@
       const existing = (currentCalendar.pinnedDates || {})[dateKey] || {};
       const memo = typeof existing === 'string' ? existing : (existing.memo || '');
       const image = typeof existing === 'string' ? null : (existing.image || null);
-      setPinModal({ open: true, dateKey, memo, image });
+      setPinModal({ open: true, dateKey, memo, image, imgEdit: defaultImgEdit });
     };
 
-    const savePinMemo = () => {
+    const savePinMemo = async () => {
       if (!selectedCalendar) return;
+      let img = pinModal.image;
+      const ie = pinModal.imgEdit || defaultImgEdit;
+      if (img && (ie.rotate !== 0 || ie.flipH || ie.flipV || ie.scale !== 1.0)) {
+        img = await applyImageTransforms(img, ie);
+      }
       const newPinnedDates = { ...(currentCalendar.pinnedDates || {}) };
-      if (pinModal.memo.trim() || pinModal.image) {
-        newPinnedDates[pinModal.dateKey] = { memo: pinModal.memo.trim(), image: pinModal.image };
+      if (pinModal.memo.trim() || img) {
+        newPinnedDates[pinModal.dateKey] = { memo: pinModal.memo.trim(), image: img };
       } else {
         delete newPinnedDates[pinModal.dateKey];
       }
@@ -1286,7 +1262,7 @@
       );
       setCalendars(newCals);
       save(newCals, null);
-      setPinModal({ open: false, dateKey: '', memo: '', image: null });
+      setPinModal({ open: false, dateKey: '', memo: '', image: null, imgEdit: defaultImgEdit });
     };
 
     const removePin = (dateKey) => {
@@ -1304,7 +1280,7 @@
       const file = e.target.files?.[0];
       if (!file) return;
       const reader = new FileReader();
-      reader.onload = (ev) => setPinModal(prev => ({ ...prev, image: ev.target.result }));
+      reader.onload = (ev) => setPinModal(prev => ({ ...prev, image: ev.target.result, imgEdit: defaultImgEdit }));
       reader.readAsDataURL(file);
     };
 
@@ -1414,6 +1390,29 @@
       return `${year}. ${String(month).padStart(2, '0')}. ${String(day).padStart(2, '0')}`;
     };
 
+    // 모아보기 파이 SVG (최대 4색)
+    const CloverDot = ({ colors }) => {
+      const r = 7, cx = 7, cy = 7, size = 14;
+      if (!colors || colors.length === 0) return null;
+      if (colors.length === 1) {
+        return (
+          <svg width={size} height={size} style={{ display: 'block' }}>
+            <circle cx={cx} cy={cy} r={r} fill={colors[0]} />
+          </svg>
+        );
+      }
+      const n = colors.length;
+      const paths = colors.map((color, i) => {
+        const a0 = (i / n) * 2 * Math.PI - Math.PI / 2;
+        const a1 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2;
+        const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
+        const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
+        const large = (1 / n) > 0.5 ? 1 : 0;
+        return React.createElement('path', { key: i, d: `M${cx} ${cy} L${x0} ${y0} A${r} ${r} 0 ${large} 1 ${x1} ${y1}Z`, fill: color });
+      });
+      return React.createElement('svg', { width: size, height: size, style: { display: 'block' } }, ...paths);
+    };
+
     const postitRotations = [-1.5, 1, -0.8, 1.3, -1.1, 0.7];
 
     /********************************************************
@@ -1427,6 +1426,26 @@
           <p className="sidebar-title">List</p>
 
           <div className="calendar-list">
+            {/* 모아보기 항목 */}
+            {calendars.length > 0 && (
+              <div
+                className={`calendar-item ${selectedCalendar === 'all' ? 'selected' : ''}`}
+                onClick={() => setSelectedCalendar('all')}
+              >
+                <div className="cal-item-left">
+                  <div style={{ width: 10, height: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <svg width="10" height="10" viewBox="0 0 10 10">
+                      <path d="M5 5 L5 0 A5 5 0 0 1 10 5Z" fill={calendars[0]?.color || '#aaa'} />
+                      <path d="M5 5 L10 5 A5 5 0 0 1 5 10Z" fill={calendars[1]?.color || (calendars[0]?.color || '#aaa')} />
+                      <path d="M5 5 L5 10 A5 5 0 0 1 0 5Z" fill={calendars[2]?.color || (calendars[0]?.color || '#aaa')} />
+                      <path d="M5 5 L0 5 A5 5 0 0 1 5 0Z" fill={calendars[3]?.color || (calendars[0]?.color || '#aaa')} />
+                    </svg>
+                  </div>
+                  <span className="cal-title-text">모아보기</span>
+                </div>
+              </div>
+            )}
+
             {calendars.map(cal => {
               if (editingCalId === cal.id) {
                 return (
@@ -1586,6 +1605,42 @@
                   })}
                 </div>
 
+                {/* 색상 혼합 모드 */}
+                <p className="settings-section-label">color blend</p>
+                <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
+                  {[{ val: 'multiply', label: '1. multiply' }, { val: 'normal', label: '2. normal' }].map(opt => {
+                    const isActive = (settings.blendMode || 'multiply') === opt.val;
+                    return (
+                      <button
+                        key={opt.val}
+                        style={{
+                          flex: 1,
+                          padding: '8px 0',
+                          border: 'none',
+                          borderRadius: 10,
+                          cursor: 'pointer',
+                          background: 'var(--bg)',
+                          color: isActive ? 'var(--text-pri)' : 'var(--text-muted)',
+                          fontSize: 11,
+                          letterSpacing: '0.05em',
+                          fontFamily: 'HJSS, sans-serif',
+                          boxShadow: isActive
+                            ? 'inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light)'
+                            : '3px 3px 6px var(--sh-dark), -3px -3px 6px var(--sh-light)',
+                          transition: 'box-shadow 0.15s ease',
+                        }}
+                        onClick={() => {
+                          const newS = { ...settings, blendMode: opt.val };
+                          setSettings(newS);
+                          save(null, newS);
+                        }}
+                      >
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
                 {/* 포커스 메시지 */}
                 <p className="settings-section-label">focus</p>
                 <div>
@@ -1658,7 +1713,124 @@
         {/* ── 메인 컨텐츠 ── */}
         <div className={`main-content ${isSidebarCollapsed ? 'expanded' : ''} ${settings.sidebarPosition === 'right' ? 'right-sidebar' : ''}`}>
 
-          {/* ── export 캡처 영역 (달력 + 포스트잇 flex row) ── */}
+        {/* ──── 모아보기 ──── */}
+        {selectedCalendar === 'all' ? (() => {
+          const activeCals = calendars.length > 4
+            ? (() => {
+                const picks = overviewPicks && overviewPicks.length > 0
+                  ? overviewPicks
+                  : calendars.slice(0, 4).map(c => c.id);
+                return calendars.filter(c => picks.includes(c.id));
+              })()
+            : calendars;
+
+          return (
+            <div style={{ padding: '32px', display: 'flex', flexDirection: 'column', gap: 20 }}>
+              {/* 헤더 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button className="nav-button" onClick={() => navigateMonth('prev')}>←</button>
+                <span className="month-title">
+                  {currentDate.toLocaleString('en-US', { month: 'long', year: 'numeric' })}
+                </span>
+                <button className="nav-button" onClick={() => navigateMonth('next')}>→</button>
+              </div>
+
+              {/* 4개 초과일 때 캘린더 선택 */}
+              {calendars.length > 4 && (
+                <div>
+                  <p className="settings-section-label" style={{ marginBottom: 8 }}>표시할 캘린더 (최대 4개)</p>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                    {calendars.map(cal => {
+                      const curPicks = overviewPicks || calendars.slice(0, 4).map(c => c.id);
+                      const isPicked = curPicks.includes(cal.id);
+                      return (
+                        <button
+                          key={cal.id}
+                          onClick={() => {
+                            const cur = overviewPicks || calendars.slice(0, 4).map(c => c.id);
+                            if (isPicked) {
+                              setOverviewPicks(cur.filter(id => id !== cal.id));
+                            } else {
+                              if (cur.length < 4) setOverviewPicks([...cur, cal.id]);
+                            }
+                          }}
+                          style={{
+                            display: 'flex', alignItems: 'center', gap: 5,
+                            padding: '5px 10px', border: 'none', borderRadius: 8, cursor: 'pointer',
+                            background: 'var(--bg)', fontFamily: 'HJSS, sans-serif', fontSize: 11,
+                            color: isPicked ? 'var(--text-pri)' : 'var(--text-muted)',
+                            boxShadow: isPicked
+                              ? 'inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light)'
+                              : '2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light)',
+                          }}
+                        >
+                          <div style={{ width: 7, height: 7, borderRadius: '50%', background: cal.color, flexShrink: 0 }} />
+                          {cal.title}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* 캘린더 그리드 */}
+              <div className="calendar-container" style={{ maxWidth: 340 }}>
+                {/* 요일 헤더 */}
+                <div className="calendar-grid" style={{ marginBottom: 8 }}>
+                  {['SUN','MON','TUE','WED','THU','FRI','SAT'].map(d => (
+                    <div key={d} className="calendar-day day-header">{d}</div>
+                  ))}
+                </div>
+                {/* 날짜 그리드 */}
+                <div className="calendar-grid">
+                  {Array(firstDay).fill(null).map((_, i) => (
+                    <div key={`e-${i}`} className="calendar-day day-empty" />
+                  ))}
+                  {Array(daysInMonth).fill(null).map((_, i) => {
+                    const day = i + 1;
+                    const year  = currentDate.getFullYear();
+                    const month = currentDate.getMonth() + 1;
+                    const dateKey = `${year}-${month}-${day}`;
+                    const doneCals = activeCals.filter(c => c.completedDates.includes(dateKey));
+                    const colors = doneCals.map(c => c.color);
+                    return (
+                      <div key={day} className="day-wrapper" style={{ position: 'relative' }}>
+                        <button
+                          className="calendar-day"
+                          style={{ color: '#2C2825', position: 'relative' }}
+                          disabled
+                        >
+                          {day}
+                          {colors.length > 0 && (
+                            <div style={{
+                              position: 'absolute', bottom: 2, right: 2,
+                              mixBlendMode: settings.blendMode || 'multiply',
+                              borderRadius: '50%', overflow: 'hidden',
+                              lineHeight: 0,
+                            }}>
+                              <CloverDot colors={colors} />
+                            </div>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 범례 */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 16px' }}>
+                {activeCals.map(cal => (
+                  <div key={cal.id} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: cal.color }} />
+                    <span style={{ fontSize: 11, color: 'var(--text-sub)', fontFamily: 'HJSS, sans-serif' }}>{cal.title}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })() : (
+          <React.Fragment>
           <div
             id="calendar-export-area"
             style={{
@@ -1717,7 +1889,7 @@
                           onClick={() => handleDayClick(day)}
                           style={{
                             backgroundColor: isCompleted ? currentCalendar.color : 'transparent',
-                            mixBlendMode: isCompleted ? 'multiply' : 'normal',
+                            mixBlendMode: isCompleted ? (settings.blendMode || 'multiply') : 'normal',
                             color: isCompleted ? getContrastColor(currentCalendar.color) : '#2C2825',
                             boxShadow: isCompleted
                               ? 'inset 3px 3px 6px rgba(0,0,0,0.12), inset -2px -2px 5px rgba(255,255,255,0.25)'
@@ -1775,7 +1947,7 @@
                       {/* 압정 */}
                       <div
                         className="postit-tack"
-                        style={{ background: currentCalendar.color }}
+                        style={{ background: currentCalendar.color, mixBlendMode: settings.blendMode || 'multiply' }}
                       />
 
                       {/* 고스트 날짜 숫자 */}
@@ -1798,7 +1970,7 @@
                             const existing = currentCalendar.pinnedDates?.[dateKey] || {};
                             const m = typeof existing === 'string' ? existing : (existing.memo || '');
                             const im = typeof existing === 'string' ? null : (existing.image || null);
-                            setPinModal({ open: true, dateKey, memo: m, image: im });
+                            setPinModal({ open: true, dateKey, memo: m, image: im, imgEdit: defaultImgEdit });
                           }}
                           title="편집"
                         ><IconPen size={10} /></button>
@@ -1827,6 +1999,8 @@
             {exportStatus === 'saved'   && '✓ 저장됨'}
             {exportStatus === 'idle'    && 'export'}
           </button>
+          </React.Fragment>
+        )}
 
         </div>{/* /main-content */}
 
@@ -1848,26 +2022,64 @@
                 autoFocus
               />
 
-              {/* 이미지 첨부 */}
+              {/* 이미지 첨부 + 편집 */}
               <div style={{ marginBottom: '14px' }}>
-                {pinModal.image ? (
-                  <div style={{ position: 'relative', display: 'inline-block' }}>
-                    <img
-                      src={pinModal.image}
-                      alt=""
-                      style={{ maxWidth: '100%', maxHeight: '160px', borderRadius: '10px', display: 'block' }}
-                    />
-                    <button
-                      onClick={() => setPinModal(prev => ({ ...prev, image: null }))}
-                      style={{
-                        position: 'absolute', top: 4, right: 4,
-                        background: 'rgba(0,0,0,0.4)', border: 'none', borderRadius: '50%',
-                        width: 22, height: 22, cursor: 'pointer', color: '#fff',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
-                      }}
-                    ><IconX size={8} /></button>
-                  </div>
-                ) : (
+                {pinModal.image ? (() => {
+                  const ie = pinModal.imgEdit || defaultImgEdit;
+                  const btnStyle = (active) => ({
+                    padding: '5px 9px', border: 'none', borderRadius: 8, cursor: 'pointer',
+                    background: 'var(--bg)', color: active ? 'var(--text-pri)' : 'var(--text-sub)',
+                    fontSize: 13, fontFamily: 'HJSS, sans-serif',
+                    boxShadow: active
+                      ? 'inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light)'
+                      : '2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light)',
+                  });
+                  return (
+                    <div>
+                      {/* 이미지 프리뷰 */}
+                      <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', overflow: 'hidden', borderRadius: 10, marginBottom: 8 }}>
+                        <img
+                          src={pinModal.image}
+                          alt=""
+                          style={{
+                            maxWidth: '100%', maxHeight: '150px', display: 'block',
+                            transform: `rotate(${ie.rotate}deg) scaleX(${ie.flipH ? -1 : 1}) scaleY(${ie.flipV ? -1 : 1}) scale(${ie.scale})`,
+                            transformOrigin: 'center',
+                            transition: 'transform 0.15s ease',
+                          }}
+                        />
+                        <button
+                          onClick={() => setPinModal(prev => ({ ...prev, image: null, imgEdit: defaultImgEdit }))}
+                          style={{
+                            position: 'absolute', top: 4, right: 4,
+                            background: 'rgba(0,0,0,0.4)', border: 'none', borderRadius: '50%',
+                            width: 22, height: 22, cursor: 'pointer', color: '#fff',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
+                          }}
+                        ><IconX size={8} /></button>
+                      </div>
+                      {/* 편집 툴바 */}
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
+                        <button style={btnStyle(false)} title="90° 왼쪽 회전"
+                          onClick={() => setPinModal(prev => ({ ...prev, imgEdit: { ...prev.imgEdit, rotate: ((prev.imgEdit||defaultImgEdit).rotate - 90 + 360) % 360 } }))}>↺</button>
+                        <button style={btnStyle(false)} title="90° 오른쪽 회전"
+                          onClick={() => setPinModal(prev => ({ ...prev, imgEdit: { ...prev.imgEdit, rotate: ((prev.imgEdit||defaultImgEdit).rotate + 90) % 360 } }))}>↻</button>
+                        <button style={btnStyle(ie.flipH)} title="좌우 반전"
+                          onClick={() => setPinModal(prev => ({ ...prev, imgEdit: { ...(prev.imgEdit||defaultImgEdit), flipH: !(prev.imgEdit||defaultImgEdit).flipH } }))}>↔</button>
+                        <button style={btnStyle(ie.flipV)} title="상하 반전"
+                          onClick={() => setPinModal(prev => ({ ...prev, imgEdit: { ...(prev.imgEdit||defaultImgEdit), flipV: !(prev.imgEdit||defaultImgEdit).flipV } }))}>↕</button>
+                        <input
+                          type="range" min="0.4" max="2.0" step="0.05"
+                          value={ie.scale}
+                          onChange={(e) => setPinModal(prev => ({ ...prev, imgEdit: { ...(prev.imgEdit||defaultImgEdit), scale: parseFloat(e.target.value) } }))}
+                          style={{ flex: 1, minWidth: 60, accentColor: 'var(--text-sub)', cursor: 'pointer' }}
+                          title={`크기: ${Math.round(ie.scale * 100)}%`}
+                        />
+                        <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 28 }}>{Math.round(ie.scale * 100)}%</span>
+                      </div>
+                    </div>
+                  );
+                })() : (
                   <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: 'var(--text-muted)', fontSize: 12 }}>
                     <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageSelect} />
                     <span style={{
@@ -1951,7 +2163,7 @@
                                 className={`share-mini-day${c.empty ? ' empty' : ''}${c.done ? ' done' : ''}`}
                                 style={c.done ? {
                                   backgroundColor: cal.color,
-                                  mixBlendMode: 'multiply',
+                                  mixBlendMode: settings.blendMode || 'multiply',
                                   color: getContrastColor(cal.color),
                                   boxShadow: 'inset 3px 3px 6px rgba(0,0,0,0.12), inset -2px -2px 5px rgba(255,255,255,0.25)',
                                 } : {}}
@@ -1972,17 +2184,6 @@
                   })}
                 </div>
 
-                {/* export 버튼 */}
-                <button
-                  className={`stats-export-btn${statsExportStatus === 'copied' || statsExportStatus === 'saved' ? ' done' : ''}`}
-                  onClick={exportStats}
-                  disabled={statsExportStatus === 'loading'}
-                >
-                  {statsExportStatus === 'loading' && '…'}
-                  {statsExportStatus === 'copied'  && '✓ 클립보드에 복사됨'}
-                  {statsExportStatus === 'saved'   && '✓ 저장됨'}
-                  {statsExportStatus === 'idle'    && 'export'}
-                </button>
               </div>
             </div>
           );
