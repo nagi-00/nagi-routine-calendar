@@ -1758,7 +1758,7 @@
     // 14×14 뷰박스: 꽃잎 4개(NW·NE·SE·SW 대각선), 각 사분면에 독립 배치
     const CloverDot = ({ colors }) => {
       if (!colors || colors.length === 0) return null;
-      const size = 14, pr = 3.1, off = 3.5, cx = 7, cy = 7;
+      const size = 14, pr = 3.6, off = 2.5, cx = 7, cy = 7;
       // 꽃잎 위치: NW, NE, SE, SW (대각선 45°)
       const petals = [
         { dx: -off, dy: -off }, // NW
@@ -1803,12 +1803,12 @@
               >
                 <div className="cal-item-left">
                   <div style={{ width: 10, height: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {/* 네잎클로버: 꽃잎 4개 (NW·NE·SE·SW 대각선 배치, 중앙 구멍) */}
+                    {/* 네잎클로버: 꽃잎 4개 (NW·NE·SE·SW 대각선, 중앙 채움) */}
                     <svg width="10" height="10" viewBox="0 0 10 10">
-                      <circle cx="2.5" cy="2.5" r="2.2" fill={calendars[0]?.color || '#aaa'} opacity="0.92"/>
-                      <circle cx="7.5" cy="2.5" r="2.2" fill={calendars[1]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
-                      <circle cx="7.5" cy="7.5" r="2.2" fill={calendars[2]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
-                      <circle cx="2.5" cy="7.5" r="2.2" fill={calendars[3]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
+                      <circle cx="3.2" cy="3.2" r="2.6" fill={calendars[0]?.color || '#aaa'} opacity="0.92"/>
+                      <circle cx="6.8" cy="3.2" r="2.6" fill={calendars[1]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
+                      <circle cx="6.8" cy="6.8" r="2.6" fill={calendars[2]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
+                      <circle cx="3.2" cy="6.8" r="2.6" fill={calendars[3]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
                     </svg>
                   </div>
                   <span className="cal-title-text">모아보기</span>
