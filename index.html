@@ -949,6 +949,61 @@
       text-align: center;
       padding: 32px 0;
     }
+
+    /* ── 드래그 핸들 ── */
+    .cal-drag-handle {
+      cursor: grab;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 0 2px;
+      opacity: 0;
+      transition: opacity 0.15s;
+      flex-shrink: 0;
+      line-height: 1;
+      user-select: none;
+    }
+    .calendar-item:hover .cal-drag-handle { opacity: 1; }
+    .cal-drag-handle:active { cursor: grabbing; }
+    .calendar-item.drag-over {
+      box-shadow: 0 -2px 0 var(--text-muted), 3px 3px 8px var(--sh-dark), -3px -3px 8px var(--sh-light);
+    }
+
+    /* ── 팔레트 프리셋 ── */
+    .palette-dots {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+    .palette-dot-btn {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 4px;
+      border-radius: 8px;
+      transition: box-shadow 0.15s;
+    }
+    .palette-dot-btn:hover {
+      box-shadow: 2px 2px 6px var(--sh-dark), -2px -2px 6px var(--sh-light);
+    }
+    .palette-dot-btn.active {
+      box-shadow: inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light);
+    }
+    .palette-dot-circle {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+    }
+    .palette-dot-label {
+      font-size: 8px;
+      color: var(--text-muted);
+      font-family: HJSS, sans-serif;
+      letter-spacing: 0.04em;
+    }
   </style>
 </head>
 <body>
@@ -1057,6 +1112,38 @@
     document.documentElement.style.setProperty('--sh-light', s.bgLight);
   };
 
+  // ── 팔레트 컬러 유틸 ──
+  const hslToHex = (h, s, l) => {
+    h = ((h % 360) + 360) % 360;
+    s /= 100; l /= 100;
+    const a = s * Math.min(l, 1 - l);
+    const f = n => {
+      const k = (n + h / 30) % 12;
+      return Math.round(255 * (l - a * Math.max(Math.min(k - 3, 9 - k, 1), -1))).toString(16).padStart(2, '0');
+    };
+    return '#' + f(0) + f(8) + f(4);
+  };
+
+  const generateHarmoniousColors = (baseHue, count) => {
+    if (count === 0) return [];
+    const sVals = [50, 42, 58, 46, 55, 38];
+    const lVals = [52, 44, 60, 48, 56, 42];
+    const hueRange = Math.min(count - 1, 5) * 8;
+    return Array.from({ length: count }, (_, i) => {
+      const hue = count === 1 ? baseHue : ((baseHue - hueRange / 2 + i * hueRange / (count - 1)) + 360) % 360;
+      return hslToHex(hue, sVals[i % sVals.length], lVals[i % lVals.length]);
+    });
+  };
+
+  const PALETTE_PRESETS = [
+    { name: 'Greenery', label: '초록', baseHue: 125, swatch: '#6A9E72' },
+    { name: 'Lavender', label: '라벤더', baseHue: 268, swatch: '#8B7EC8' },
+    { name: 'Sunrise',  label: '노을',  baseHue: 22,  swatch: '#C88060' },
+    { name: 'Ocean',    label: '오션',  baseHue: 205, swatch: '#5A8FB0' },
+    { name: 'Rose',     label: '로즈',  baseHue: 345, swatch: '#C07080' },
+    { name: 'Mocha',    label: '모카',  baseHue: 30,  swatch: '#A08060' },
+  ];
+
   const defaultSettings = {
     bgColor: '#EEEAE3',
     bgDark: '#CEC8BE',
@@ -1121,6 +1208,14 @@
     const pressTimer = React.useRef(null);
     const didLongPress = React.useRef(false);
 
+    // 팔레트 일괄 변경 — 이전 색상 백업 (1회 되돌리기)
+    const [lastCalColors, setLastCalColors] = React.useState(null);
+    const [selectedPalette, setSelectedPalette] = React.useState(null);
+
+    // 달력 순서 변경 드래그
+    const [dragOverId, setDragOverId] = React.useState(null);
+    const draggedIdRef = React.useRef(null);
+
     /********************************************************
      * (3-0) 데이터 로드 (Web: localStorage + Firestore)
      ********************************************************/
@@ -1151,7 +1246,7 @@
       }
     }, []);
 
-    // Calendars: Firestore
+    // Calendars: Firestore (로컬 순서 적용)
     React.useEffect(() => {
       const unsubscribe = db.collection('calendars').onSnapshot(
         (snapshot) => {
@@ -1159,6 +1254,18 @@
           snapshot.forEach(doc => {
             loaded.push({ id: doc.id, ...doc.data() });
           });
+          // localStorage에 저장된 순서 적용
+          const savedOrder = JSON.parse(localStorage.getItem('nagi-cal-order') || '[]');
+          if (savedOrder.length > 0) {
+            loaded.sort((a, b) => {
+              const ai = savedOrder.indexOf(a.id);
+              const bi = savedOrder.indexOf(b.id);
+              if (ai === -1 && bi === -1) return 0;
+              if (ai === -1) return 1;
+              if (bi === -1) return -1;
+              return ai - bi;
+            });
+          }
           setCalendars(loaded);
           setSelectedCalendar(prev => prev || (loaded.length > 0 ? loaded[0].id : null));
         },
@@ -1550,6 +1657,76 @@
     };
 
     /********************************************************
+     * (3-9b) 팔레트 일괄 변경 (Firestore batch)
+     ********************************************************/
+    const applyBulkPalette = async (preset) => {
+      if (calendars.length === 0) return;
+      const backup = calendars.map(c => ({ id: c.id, color: c.color }));
+      setLastCalColors(backup);
+      const newColors = generateHarmoniousColors(preset.baseHue, calendars.length);
+      try {
+        const batch = db.batch();
+        calendars.forEach((c, i) => {
+          batch.update(db.collection('calendars').doc(c.id), { color: newColors[i] });
+        });
+        await batch.commit();
+        setSelectedPalette(preset.name);
+      } catch (err) {
+        console.error('팔레트 적용 중 에러:', err);
+      }
+    };
+
+    const undoBulkPalette = async () => {
+      if (!lastCalColors) return;
+      try {
+        const batch = db.batch();
+        lastCalColors.forEach(({ id, color }) => {
+          batch.update(db.collection('calendars').doc(id), { color });
+        });
+        await batch.commit();
+        setLastCalColors(null);
+        setSelectedPalette(null);
+      } catch (err) {
+        console.error('팔레트 되돌리기 중 에러:', err);
+      }
+    };
+
+    /********************************************************
+     * (3-9c) 달력 순서 드래그
+     ********************************************************/
+    const handleDragStart = (e, id) => {
+      draggedIdRef.current = id;
+      e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragOver = (e, id) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (id !== draggedIdRef.current) setDragOverId(id);
+    };
+
+    const handleDrop = (e, targetId) => {
+      e.preventDefault();
+      const fromId = draggedIdRef.current;
+      if (!fromId || fromId === targetId) { setDragOverId(null); return; }
+      const fromIdx = calendars.findIndex(c => c.id === fromId);
+      const toIdx   = calendars.findIndex(c => c.id === targetId);
+      if (fromIdx < 0 || toIdx < 0) { setDragOverId(null); return; }
+      const newCals = [...calendars];
+      const [moved] = newCals.splice(fromIdx, 1);
+      newCals.splice(toIdx, 0, moved);
+      setCalendars(newCals);
+      localStorage.setItem('nagi-cal-order', JSON.stringify(newCals.map(c => c.id)));
+      setDragOverId(null);
+      draggedIdRef.current = null;
+    };
+
+    const handleDragEnd = () => {
+      setDragOverId(null);
+      draggedIdRef.current = null;
+    };
+
+    /********************************************************
      * (3-10) 파생 값
      ********************************************************/
     const currentCalendar = calendars.find(c => c.id === selectedCalendar)
@@ -1578,16 +1755,16 @@
     };
 
     // 모아보기 네잎클로버 SVG (최대 4색)
-    // 14×14 뷰박스: 꽃잎 4개(상·우·하·좌), 반지름 4.2, 꽃잎 중심 오프셋 2.8
+    // 14×14 뷰박스: 꽃잎 4개(NW·NE·SE·SW 대각선), 각 사분면에 독립 배치
     const CloverDot = ({ colors }) => {
       if (!colors || colors.length === 0) return null;
-      const size = 14, pr = 4.2, off = 2.8, cx = 7, cy = 7;
-      // 꽃잎 위치: 상, 우, 하, 좌
+      const size = 14, pr = 3.1, off = 3.5, cx = 7, cy = 7;
+      // 꽃잎 위치: NW, NE, SE, SW (대각선 45°)
       const petals = [
-        { dx: 0,    dy: -off },
-        { dx: off,  dy: 0    },
-        { dx: 0,    dy: off  },
-        { dx: -off, dy: 0    },
+        { dx: -off, dy: -off }, // NW
+        { dx:  off, dy: -off }, // NE
+        { dx:  off, dy:  off }, // SE
+        { dx: -off, dy:  off }, // SW
       ];
       return (
         <svg width={size} height={size} style={{ display: 'block' }}>
@@ -1626,12 +1803,12 @@
               >
                 <div className="cal-item-left">
                   <div style={{ width: 10, height: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    {/* 네잎클로버: 꽃잎 4개 (상·우·하·좌) */}
+                    {/* 네잎클로버: 꽃잎 4개 (NW·NE·SE·SW 대각선 배치, 중앙 구멍) */}
                     <svg width="10" height="10" viewBox="0 0 10 10">
-                      <circle cx="5"   cy="2"   r="2.6" fill={calendars[0]?.color || '#aaa'} opacity="0.92"/>
-                      <circle cx="8"   cy="5"   r="2.6" fill={calendars[1]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
-                      <circle cx="5"   cy="8"   r="2.6" fill={calendars[2]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
-                      <circle cx="2"   cy="5"   r="2.6" fill={calendars[3]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
+                      <circle cx="2.5" cy="2.5" r="2.2" fill={calendars[0]?.color || '#aaa'} opacity="0.92"/>
+                      <circle cx="7.5" cy="2.5" r="2.2" fill={calendars[1]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
+                      <circle cx="7.5" cy="7.5" r="2.2" fill={calendars[2]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
+                      <circle cx="2.5" cy="7.5" r="2.2" fill={calendars[3]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
                     </svg>
                   </div>
                   <span className="cal-title-text">모아보기</span>
@@ -1669,9 +1846,15 @@
               return (
                 <div
                   key={cal.id}
-                  className={`calendar-item ${selectedCalendar === cal.id ? 'selected' : ''}`}
+                  className={`calendar-item ${selectedCalendar === cal.id ? 'selected' : ''} ${dragOverId === cal.id ? 'drag-over' : ''}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, cal.id)}
+                  onDragOver={(e) => handleDragOver(e, cal.id)}
+                  onDrop={(e) => handleDrop(e, cal.id)}
+                  onDragEnd={handleDragEnd}
                   onClick={() => setSelectedCalendar(cal.id)}
                 >
+                  <span className="cal-drag-handle" title="드래그하여 순서 변경">⠿</span>
                   <div className="cal-item-left">
                     <div className="cal-color-dot" style={{ background: cal.color }} />
                     <span className="cal-title-text">{cal.title}</span>
@@ -1735,6 +1918,29 @@
 
             {isSettingsOpen && (
               <div className="settings-body">
+
+                {/* ── 팔레트 일괄 변경 ── */}
+                <p className="settings-section-label">calendar palette</p>
+                <div className="palette-dots">
+                  {PALETTE_PRESETS.map(preset => (
+                    <button
+                      key={preset.name}
+                      className={`palette-dot-btn${selectedPalette === preset.name ? ' active' : ''}`}
+                      title={preset.label}
+                      onClick={() => applyBulkPalette(preset)}
+                    >
+                      <div className="palette-dot-circle" style={{ background: preset.swatch }} />
+                      <span className="palette-dot-label">{preset.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {lastCalColors && (
+                  <button
+                    className="sm-button"
+                    style={{ marginBottom: 16, fontSize: 11 }}
+                    onClick={undoBulkPalette}
+                  >↩ 되돌리기</button>
+                )}
 
                 {/* 배경 테마 */}
                 <p className="settings-section-label">background</p>
@@ -2193,11 +2399,13 @@
                   >
                     <button
                       className={`checklist-star${item.starred ? ' starred' : ''}`}
+                      style={item.starred ? { color: currentCalendar.color, opacity: 1 } : {}}
                       onClick={() => starCheckItem(item.id)}
                       title={item.starred ? '별표 해제' : '별표'}
                     >{item.starred ? '★' : '☆'}</button>
                     <button
                       className={`checklist-check${item.done ? ' done' : ''}`}
+                      style={item.done ? { background: currentCalendar.color, boxShadow: 'inset 1px 1px 3px rgba(0,0,0,0.12), inset -1px -1px 2px rgba(255,255,255,0.15)' } : {}}
                       onClick={() => toggleCheckItem(item.id)}
                     />
                     {editingCheckId === item.id ? (
