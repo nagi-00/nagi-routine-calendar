@@ -42,14 +42,14 @@ let alwaysOnTopEnabled = false;
 let isQuitting = false;
 
 function showWindow() {
-  if (!mainWin) return;
+  if (!mainWin || mainWin.isDestroyed()) return;
   mainWin.setSkipTaskbar(false);
   mainWin.show();
   mainWin.focus();
 }
 
 function hideWindow() {
-  if (!mainWin) return;
+  if (!mainWin || mainWin.isDestroyed()) return;
   mainWin.setSkipTaskbar(true);
   mainWin.hide();
 }
@@ -79,7 +79,7 @@ function createTray() {
 
   // 클릭: 윈도우 보이기/숨기기 토글
   tray.on('click', () => {
-    if (!mainWin) return;
+    if (!mainWin || mainWin.isDestroyed()) return;
     if (mainWin.isVisible()) {
       hideWindow();
     } else {
@@ -232,15 +232,12 @@ function createWindow() {
     hideWindow();
   });
 
-  // X 버튼 → 실제 종료
+  // X 버튼 → 트레이로 숨기기 (모든 플랫폼)
+  // 실제 종료는 트레이 "종료" 메뉴 또는 app.quit()으로만
   mainWin.on('close', (e) => {
     if (!isQuitting) {
-      // macOS: 창 닫기는 숨기기(Dock 동작 유지)
-      // Windows/Linux: 실제 종료
-      if (process.platform === 'darwin') {
-        e.preventDefault();
-        mainWin.hide();
-      }
+      e.preventDefault();
+      hideWindow();
     }
   });
 

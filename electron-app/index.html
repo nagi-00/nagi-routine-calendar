@@ -1136,6 +1136,7 @@
         if (s.focusMessages && s.focusMessages.length > 0) {
           setFocusMessage(s.focusMessages[Math.floor(Math.random() * s.focusMessages.length)]);
         }
+        setChecklist(s.checklist || []);
       });
     };
 
@@ -1143,7 +1144,6 @@
       loadAll();
       window.electronAPI.onMenuAction((action) => {
         if (action === 'reload') loadAll();
-        if (action === 'showStats') setShowStats(true);
         if (action === 'showMemos') setShowMemos(true);
       });
     }, []);
@@ -1156,6 +1156,30 @@
         calendars: newCals ?? calendars,
         settings: newSetts ?? settings,
       });
+    };
+
+    /********************************************************
+     * (3-1b) 체크리스트 핸들러
+     ********************************************************/
+    const saveChecklist = (newList) => {
+      setChecklist(newList);
+      const newSetts = { ...settings, checklist: newList };
+      setSettings(newSetts);
+      save(null, newSetts);
+    };
+
+    const addCheckItem = () => {
+      if (!newCheckItem.trim()) return;
+      saveChecklist([...checklist, { id: genId(), text: newCheckItem.trim(), done: false }]);
+      setNewCheckItem('');
+    };
+
+    const toggleCheckItem = (id) => {
+      saveChecklist(checklist.map(i => i.id === id ? { ...i, done: !i.done } : i));
+    };
+
+    const deleteCheckItem = (id) => {
+      saveChecklist(checklist.filter(i => i.id !== id));
     };
 
     /********************************************************
@@ -1208,26 +1232,41 @@
       }
     };
 
-    const applyImageTransforms = (dataUrl, { rotate, flipH, flipV, scale }) => {
+    const applyImageTransforms = (dataUrl, { rotate, flipH, flipV, scale, offsetX = 0, offsetY = 0 }) => {
       return new Promise((resolve) => {
         const img = new Image();
         img.onload = () => {
-          const rad = (rotate * Math.PI) / 180;
-          const sin = Math.abs(Math.sin(rad));
-          const cos = Math.abs(Math.cos(rad));
-          const sw = img.width * scale;
-          const sh = img.height * scale;
-          const cw = Math.round(sw * cos + sh * sin);
-          const ch = Math.round(sw * sin + sh * cos);
-          const canvas = document.createElement('canvas');
-          canvas.width = cw;
-          canvas.height = ch;
-          const ctx = canvas.getContext('2d');
-          ctx.translate(cw / 2, ch / 2);
-          ctx.rotate(rad);
-          ctx.scale(flipH ? -scale : scale, flipV ? -scale : scale);
-          ctx.drawImage(img, -img.width / 2, -img.height / 2);
-          resolve(canvas.toDataURL('image/jpeg', 0.88));
+          if (offsetX !== 0 || offsetY !== 0) {
+            // 패닝 있을 때: 프리뷰 뷰포트(300×160)로 고정 크롭
+            const VW = 300, VH = 160;
+            const fitScale = Math.min(VW / img.width, VH / img.height) || 1;
+            const totalScale = fitScale * scale;
+            const canvas = document.createElement('canvas');
+            canvas.width = VW; canvas.height = VH;
+            const ctx = canvas.getContext('2d');
+            ctx.translate(VW / 2 + offsetX, VH / 2 + offsetY);
+            ctx.rotate((rotate * Math.PI) / 180);
+            ctx.scale(flipH ? -totalScale : totalScale, flipV ? -totalScale : totalScale);
+            ctx.drawImage(img, -img.width / 2, -img.height / 2);
+            resolve(canvas.toDataURL('image/jpeg', 0.88));
+          } else {
+            // 기존 방식: 전체 이미지 변환
+            const rad = (rotate * Math.PI) / 180;
+            const sin = Math.abs(Math.sin(rad));
+            const cos = Math.abs(Math.cos(rad));
+            const sw = img.width * scale;
+            const sh = img.height * scale;
+            const cw = Math.round(sw * cos + sh * sin);
+            const ch = Math.round(sw * sin + sh * cos);
+            const canvas = document.createElement('canvas');
+            canvas.width = cw; canvas.height = ch;
+            const ctx = canvas.getContext('2d');
+            ctx.translate(cw / 2, ch / 2);
+            ctx.rotate(rad);
+            ctx.scale(flipH ? -scale : scale, flipV ? -scale : scale);
+            ctx.drawImage(img, -img.width / 2, -img.height / 2);
+            resolve(canvas.toDataURL('image/jpeg', 0.88));
+          }
         };
         img.src = dataUrl;
       });
@@ -1331,7 +1370,7 @@
       if (!selectedCalendar) return;
       let img = pinModal.image;
       const ie = pinModal.imgEdit || defaultImgEdit;
-      if (img && (ie.rotate !== 0 || ie.flipH || ie.flipV || ie.scale !== 1.0)) {
+      if (img && (ie.rotate !== 0 || ie.flipH || ie.flipV || ie.scale !== 1.0 || ie.offsetX !== 0 || ie.offsetY !== 0)) {
         img = await applyImageTransforms(img, ie);
       }
       const newPinnedDates = { ...(currentCalendar.pinnedDates || {}) };
@@ -1481,27 +1520,32 @@
       return `${year}. ${String(month).padStart(2, '0')}. ${String(day).padStart(2, '0')}`;
     };
 
-    // 모아보기 파이 SVG (최대 4색)
+    // 모아보기 네잎클로버 SVG (최대 4색)
+    // 14×14 뷰박스: 꽃잎 4개(상·우·하·좌), 반지름 4.2, 꽃잎 중심 오프셋 2.8
     const CloverDot = ({ colors }) => {
-      const r = 7, cx = 7, cy = 7, size = 14;
       if (!colors || colors.length === 0) return null;
-      if (colors.length === 1) {
-        return (
-          <svg width={size} height={size} style={{ display: 'block' }}>
-            <circle cx={cx} cy={cy} r={r} fill={colors[0]} />
-          </svg>
-        );
-      }
-      const n = colors.length;
-      const paths = colors.map((color, i) => {
-        const a0 = (i / n) * 2 * Math.PI - Math.PI / 2;
-        const a1 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2;
-        const x0 = cx + r * Math.cos(a0), y0 = cy + r * Math.sin(a0);
-        const x1 = cx + r * Math.cos(a1), y1 = cy + r * Math.sin(a1);
-        const large = (1 / n) > 0.5 ? 1 : 0;
-        return React.createElement('path', { key: i, d: `M${cx} ${cy} L${x0} ${y0} A${r} ${r} 0 ${large} 1 ${x1} ${y1}Z`, fill: color });
-      });
-      return React.createElement('svg', { width: size, height: size, style: { display: 'block' } }, ...paths);
+      const size = 14, pr = 4.2, off = 2.8, cx = 7, cy = 7;
+      // 꽃잎 위치: 상, 우, 하, 좌
+      const petals = [
+        { dx: 0,    dy: -off },
+        { dx: off,  dy: 0    },
+        { dx: 0,    dy: off  },
+        { dx: -off, dy: 0    },
+      ];
+      return (
+        <svg width={size} height={size} style={{ display: 'block' }}>
+          {colors.slice(0, 4).map((color, i) => (
+            <circle
+              key={i}
+              cx={cx + petals[i].dx}
+              cy={cy + petals[i].dy}
+              r={pr}
+              fill={color}
+              opacity="0.92"
+            />
+          ))}
+        </svg>
+      );
     };
 
     const postitRotations = [-1.5, 1, -0.8, 1.3, -1.1, 0.7];
@@ -1525,11 +1569,12 @@
               >
                 <div className="cal-item-left">
                   <div style={{ width: 10, height: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    {/* 네잎클로버: 꽃잎 4개 (상·우·하·좌) */}
                     <svg width="10" height="10" viewBox="0 0 10 10">
-                      <path d="M5 5 L5 0 A5 5 0 0 1 10 5Z" fill={calendars[0]?.color || '#aaa'} />
-                      <path d="M5 5 L10 5 A5 5 0 0 1 5 10Z" fill={calendars[1]?.color || (calendars[0]?.color || '#aaa')} />
-                      <path d="M5 5 L5 10 A5 5 0 0 1 0 5Z" fill={calendars[2]?.color || (calendars[0]?.color || '#aaa')} />
-                      <path d="M5 5 L0 5 A5 5 0 0 1 5 0Z" fill={calendars[3]?.color || (calendars[0]?.color || '#aaa')} />
+                      <circle cx="5"   cy="2"   r="2.6" fill={calendars[0]?.color || '#aaa'} opacity="0.92"/>
+                      <circle cx="8"   cy="5"   r="2.6" fill={calendars[1]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
+                      <circle cx="5"   cy="8"   r="2.6" fill={calendars[2]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
+                      <circle cx="2"   cy="5"   r="2.6" fill={calendars[3]?.color || (calendars[0]?.color || '#aaa')} opacity="0.92"/>
                     </svg>
                   </div>
                   <span className="cal-title-text">모아보기</span>
@@ -2135,6 +2180,33 @@
                 </div>
               )}
 
+              {/* 체크리스트 */}
+              <div className="checklist-card">
+                <p className="checklist-title">checklist</p>
+                {checklist.length > 0 && checklist.map(item => (
+                  <div key={item.id} className="checklist-item">
+                    <button
+                      className={`checklist-check${item.done ? ' done' : ''}`}
+                      onClick={() => toggleCheckItem(item.id)}
+                    >
+                      {item.done && <span style={{ fontSize: 8, color: 'var(--text-sub)', lineHeight: 1 }}>✓</span>}
+                    </button>
+                    <span className={`checklist-text${item.done ? ' done' : ''}`}>{item.text}</span>
+                    <button className="checklist-del" onClick={() => deleteCheckItem(item.id)}>×</button>
+                  </div>
+                ))}
+                <div className="checklist-add-row">
+                  <input
+                    className="checklist-input"
+                    value={newCheckItem}
+                    onChange={e => setNewCheckItem(e.target.value)}
+                    onKeyDown={e => e.key === 'Enter' && addCheckItem()}
+                    placeholder="새 항목 추가"
+                  />
+                  <button className="checklist-add-btn" onClick={addCheckItem}>+</button>
+                </div>
+              </div>
+
             </div>{/* /left col */}
 
             {/* 오른쪽 컬럼: 포스트잇 */}
@@ -2245,34 +2317,81 @@
                   });
                   return (
                     <div>
-                      {/* 이미지 프리뷰 */}
-                      <div style={{ position: 'relative', display: 'inline-block', maxWidth: '100%', overflow: 'hidden', borderRadius: 10, marginBottom: 8 }}>
+                      {/* 이미지 프리뷰 — 드래그로 위치 이동 */}
+                      <div
+                        style={{
+                          position: 'relative', width: '100%', height: 160,
+                          overflow: 'hidden', borderRadius: 10, marginBottom: 8,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          cursor: 'grab', background: 'var(--sh-dark)',
+                          userSelect: 'none',
+                        }}
+                        onPointerDown={(e) => {
+                          e.currentTarget.setPointerCapture(e.pointerId);
+                          imgDragRef.current = {
+                            active: true,
+                            startX: e.clientX, startY: e.clientY,
+                            baseOffX: (pinModal.imgEdit || defaultImgEdit).offsetX,
+                            baseOffY: (pinModal.imgEdit || defaultImgEdit).offsetY,
+                          };
+                          e.currentTarget.style.cursor = 'grabbing';
+                        }}
+                        onPointerMove={(e) => {
+                          if (!imgDragRef.current.active) return;
+                          const dx = e.clientX - imgDragRef.current.startX;
+                          const dy = e.clientY - imgDragRef.current.startY;
+                          setPinModal(prev => ({
+                            ...prev,
+                            imgEdit: {
+                              ...(prev.imgEdit || defaultImgEdit),
+                              offsetX: imgDragRef.current.baseOffX + dx,
+                              offsetY: imgDragRef.current.baseOffY + dy,
+                            }
+                          }));
+                        }}
+                        onPointerUp={(e) => {
+                          imgDragRef.current.active = false;
+                          e.currentTarget.releasePointerCapture(e.pointerId);
+                          e.currentTarget.style.cursor = 'grab';
+                        }}
+                      >
                         <img
                           src={pinModal.image}
                           alt=""
                           style={{
-                            maxWidth: '100%', maxHeight: '150px', display: 'block',
-                            transform: `rotate(${ie.rotate}deg) scaleX(${ie.flipH ? -1 : 1}) scaleY(${ie.flipV ? -1 : 1}) scale(${ie.scale})`,
+                            maxWidth: '100%', maxHeight: '100%', display: 'block',
+                            transform: `translate(${ie.offsetX}px, ${ie.offsetY}px) rotate(${ie.rotate}deg) scaleX(${ie.flipH ? -1 : 1}) scaleY(${ie.flipV ? -1 : 1}) scale(${ie.scale})`,
                             transformOrigin: 'center',
-                            transition: 'transform 0.15s ease',
+                            pointerEvents: 'none',
                           }}
                         />
                         <button
-                          onClick={() => setPinModal(prev => ({ ...prev, image: null, imgEdit: defaultImgEdit }))}
+                          onClick={(e) => { e.stopPropagation(); setPinModal(prev => ({ ...prev, image: null, imgEdit: defaultImgEdit })); }}
                           style={{
-                            position: 'absolute', top: 4, right: 4,
-                            background: 'rgba(0,0,0,0.4)', border: 'none', borderRadius: '50%',
+                            position: 'absolute', top: 6, right: 6,
+                            background: 'rgba(0,0,0,0.45)', border: 'none', borderRadius: '50%',
                             width: 22, height: 22, cursor: 'pointer', color: '#fff',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0,
                           }}
                         ><IconX size={8} /></button>
+                        {(ie.offsetX !== 0 || ie.offsetY !== 0) && (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); setPinModal(prev => ({ ...prev, imgEdit: { ...(prev.imgEdit||defaultImgEdit), offsetX: 0, offsetY: 0 } })); }}
+                            style={{
+                              position: 'absolute', bottom: 6, right: 6,
+                              background: 'rgba(0,0,0,0.35)', border: 'none', borderRadius: 6,
+                              padding: '2px 7px', cursor: 'pointer', color: '#fff',
+                              fontSize: 9, fontFamily: 'HJSS, sans-serif',
+                            }}
+                          >중앙 초기화</button>
+                        )}
                       </div>
                       {/* 편집 툴바 */}
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
                         <button style={btnStyle(false)} title="90° 왼쪽 회전"
-                          onClick={() => setPinModal(prev => ({ ...prev, imgEdit: { ...prev.imgEdit, rotate: ((prev.imgEdit||defaultImgEdit).rotate - 90 + 360) % 360 } }))}>↺</button>
+                          onClick={() => setPinModal(prev => ({ ...prev, imgEdit: { ...(prev.imgEdit||defaultImgEdit), rotate: ((prev.imgEdit||defaultImgEdit).rotate - 90 + 360) % 360 } }))}>↺</button>
                         <button style={btnStyle(false)} title="90° 오른쪽 회전"
-                          onClick={() => setPinModal(prev => ({ ...prev, imgEdit: { ...prev.imgEdit, rotate: ((prev.imgEdit||defaultImgEdit).rotate + 90) % 360 } }))}>↻</button>
+                          onClick={() => setPinModal(prev => ({ ...prev, imgEdit: { ...(prev.imgEdit||defaultImgEdit), rotate: ((prev.imgEdit||defaultImgEdit).rotate + 90) % 360 } }))}>↻</button>
                         <button style={btnStyle(ie.flipH)} title="좌우 반전"
                           onClick={() => setPinModal(prev => ({ ...prev, imgEdit: { ...(prev.imgEdit||defaultImgEdit), flipH: !(prev.imgEdit||defaultImgEdit).flipH } }))}>↔</button>
                         <button style={btnStyle(ie.flipV)} title="상하 반전"
@@ -2311,95 +2430,6 @@
             </div>
           </div>
         )}
-
-        {/* ── 달성 통계 모달 ── */}
-        {showStats && (() => {
-          const now = new Date();
-          const thisYear = now.getFullYear();
-          const thisMonth = now.getMonth();  // 0-indexed
-          const daysInMonth = new Date(thisYear, thisMonth + 1, 0).getDate();
-          const rawFirstDow = new Date(thisYear, thisMonth, 1).getDay();
-          const firstDow = weekStart === 'mon' ? (rawFirstDow + 6) % 7 : rawFirstDow;
-          const monthLabel = `${thisYear}년 ${thisMonth + 1}월`;
-          const DOWS = weekStart === 'mon'
-            ? ['월','화','수','목','금','토','일']
-            : ['일','월','화','수','목','금','토'];
-
-          if (calendars.length === 0) {
-            return (
-              <div className="modal-overlay" onClick={() => setShowStats(false)}>
-                <p className="memos-empty" style={{ color: 'var(--text-muted)' }}>달력이 없어요.</p>
-              </div>
-            );
-          }
-
-          return (
-            <div className="modal-overlay" onClick={() => setShowStats(false)}>
-              <div className="stats-scroll-wrap" onClick={(e) => e.stopPropagation()}>
-
-                {/* 카드 목록 (export 대상) */}
-                <div id="stats-export-area" style={{ display: 'flex', flexDirection: 'column', gap: 16, background: 'transparent' }}>
-                  {calendars.map(cal => {
-                    const allDates = cal.completedDates || [];
-                    const monthDoneSet = new Set(
-                      allDates
-                        .filter(d => {
-                          const [y, m] = d.split('-').map(Number);
-                          return y === thisYear && m === thisMonth + 1;
-                        })
-                        .map(d => Number(d.split('-')[2]))
-                    );
-                    const count = monthDoneSet.size;
-
-                    // 미니 캘린더 셀 생성
-                    const cells = [];
-                    for (let i = 0; i < firstDow; i++) cells.push({ empty: true, day: null });
-                    for (let d = 1; d <= daysInMonth; d++) cells.push({ empty: false, day: d, done: monthDoneSet.has(d) });
-
-                    return (
-                      <div key={cal.id} className="share-card">
-                        <div className="share-card-bar" style={{ background: cal.color }} />
-
-                        <p className="share-card-title">{cal.title}</p>
-                        <p className="share-card-month">{monthLabel}</p>
-
-                        {/* 미니 캘린더 */}
-                        <div className="share-mini-cal">
-                          <div className="share-mini-cal-header">
-                            {DOWS.map(d => <span key={d} className="share-mini-dow">{d}</span>)}
-                          </div>
-                          <div className="share-mini-cal-grid">
-                            {cells.map((c, i) => (
-                              <div
-                                key={i}
-                                className={`share-mini-day${c.empty ? ' empty' : ''}${c.done ? ' done' : ''}`}
-                                style={c.done ? {
-                                  backgroundColor: cal.color,
-                                  mixBlendMode: settings.blendMode || 'multiply',
-                                  color: getContrastColor(cal.color),
-                                  boxShadow: 'inset 3px 3px 6px rgba(0,0,0,0.12), inset -2px -2px 5px rgba(255,255,255,0.25)',
-                                } : {}}
-                              >
-                                {c.empty ? '' : c.day}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* 하단 문구 */}
-                        <div className="share-card-footer">
-                          <span className="share-card-count" style={{ color: cal.color }}>{count}</span>
-                          <span className="share-card-suffix">이번 달에 총 {count}회 달성했어요.</span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-              </div>
-            </div>
-          );
-        })()}
 
         {/* ── 전체 메모 모달 ── */}
         {showMemos && (() => {
