@@ -1260,7 +1260,6 @@
     const [newCheckItem, setNewCheckItem] = React.useState('');
     const [editingCheckId, setEditingCheckId] = React.useState(null);
     const [editingCheckText, setEditingCheckText] = React.useState('');
-    const [checklistFilter, setChecklistFilter] = React.useState(null); // null = 전체, calendarId = 해당 캘린더
 
     // 모아보기: 4개 초과 시 대표 캘린더 IDs (null = 순서대로 앞 4개)
     const [overviewPicks, setOverviewPicks] = React.useState(null);
@@ -1378,7 +1377,7 @@
 
     const addCheckItem = () => {
       if (!newCheckItem.trim()) return;
-      saveChecklist([...checklist, { id: genId(), text: newCheckItem.trim(), done: false, starred: false, calendarId: selectedCalendar }]);
+      saveChecklist([...checklist, { id: genId(), text: newCheckItem.trim(), done: false, starred: false }]);
       setNewCheckItem('');
     };
 
@@ -1753,54 +1752,22 @@
     /********************************************************
      * (3-9c) 달력 순서 드래그
      ********************************************************/
-    const handleDragStart = (e, id) => {
+    // 달력 순서 변경 — Pointer Events (데스크탑 마우스 + 모바일 터치 모두 동작)
+    const handleDragHandlePointerDown = (e, id) => {
+      e.currentTarget.setPointerCapture(e.pointerId);
       draggedIdRef.current = id;
-      e.dataTransfer.effectAllowed = 'move';
+      document.body.style.cursor = 'grabbing';
     };
-
-    const handleDragOver = (e, id) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = 'move';
-      if (id !== draggedIdRef.current) setDragOverId(id);
-    };
-
-    const handleDrop = (e, targetId) => {
-      e.preventDefault();
-      const fromId = draggedIdRef.current;
-      if (!fromId || fromId === targetId) { setDragOverId(null); return; }
-      const fromIdx = calendars.findIndex(c => c.id === fromId);
-      const toIdx   = calendars.findIndex(c => c.id === targetId);
-      if (fromIdx < 0 || toIdx < 0) { setDragOverId(null); return; }
-      const newCals = [...calendars];
-      const [moved] = newCals.splice(fromIdx, 1);
-      newCals.splice(toIdx, 0, moved);
-      setCalendars(newCals);
-      localStorage.setItem('nagi-cal-order', JSON.stringify(newCals.map(c => c.id)));
-      setDragOverId(null);
-      draggedIdRef.current = null;
-    };
-
-    const handleDragEnd = () => {
-      setDragOverId(null);
-      draggedIdRef.current = null;
-    };
-
-    // 터치 드래그 (모바일)
-    const handleTouchDragStart = (e, id) => {
-      draggedIdRef.current = id;
-    };
-    const handleTouchDragMove = (e) => {
-      e.preventDefault();
-      const touch = e.touches[0];
-      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+    const handleDragHandlePointerMove = (e) => {
+      if (!draggedIdRef.current) return;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
       const item = el?.closest('[data-cal-id]');
-      if (item) {
-        const targetId = item.dataset.calId;
-        if (targetId && targetId !== draggedIdRef.current) setDragOverId(targetId);
-      }
+      const targetId = item?.dataset?.calId;
+      if (targetId && targetId !== draggedIdRef.current) setDragOverId(targetId);
+      else if (!targetId) setDragOverId(null);
     };
-    const handleTouchDragEnd = (e) => {
-      e.preventDefault();
+    const handleDragHandlePointerUp = () => {
+      document.body.style.cursor = '';
       const fromId = draggedIdRef.current;
       if (fromId && dragOverId && fromId !== dragOverId) {
         const fromIdx = calendars.findIndex(c => c.id === fromId);
@@ -1945,19 +1912,16 @@
                   key={cal.id}
                   data-cal-id={cal.id}
                   className={`calendar-item ${selectedCalendar === cal.id ? 'selected' : ''} ${dragOverId === cal.id ? 'drag-over' : ''}`}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, cal.id)}
-                  onDragOver={(e) => handleDragOver(e, cal.id)}
-                  onDrop={(e) => handleDrop(e, cal.id)}
-                  onDragEnd={handleDragEnd}
                   onClick={() => setSelectedCalendar(cal.id)}
                 >
                   <span
                     className="cal-drag-handle"
                     title="드래그하여 순서 변경"
-                    onTouchStart={(e) => { e.stopPropagation(); handleTouchDragStart(e, cal.id); }}
-                    onTouchMove={handleTouchDragMove}
-                    onTouchEnd={handleTouchDragEnd}
+                    style={{ touchAction: 'none' }}
+                    onPointerDown={(e) => handleDragHandlePointerDown(e, cal.id)}
+                    onPointerMove={handleDragHandlePointerMove}
+                    onPointerUp={handleDragHandlePointerUp}
+                    onPointerCancel={handleDragHandlePointerUp}
                   >⠿</span>
                   <div className="cal-item-left">
                     <div className="cal-color-dot" style={{ background: cal.color }} />
@@ -2494,31 +2458,8 @@
 
               {/* 체크리스트 */}
               <div className="checklist-card">
-                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <p className="checklist-title" style={{ marginBottom: 0 }}>checklist</p>
-                </div>
-                {/* 카테고리 필터 */}
-                {calendars.length > 0 && (
-                  <div className="checklist-filter-row">
-                    <button
-                      className={`checklist-filter-btn${checklistFilter === null ? ' active' : ''}`}
-                      onClick={() => setChecklistFilter(null)}
-                    >전체</button>
-                    {calendars.map(cal => (
-                      <button
-                        key={cal.id}
-                        className={`checklist-filter-btn${checklistFilter === cal.id ? ' active' : ''}`}
-                        onClick={() => setChecklistFilter(prev => prev === cal.id ? null : cal.id)}
-                        style={checklistFilter === cal.id ? { background: cal.color, color: '#fff', boxShadow: 'inset 1px 1px 3px rgba(0,0,0,0.18), inset -1px -1px 2px rgba(255,255,255,0.1)' } : {}}
-                      >
-                        <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: cal.color, marginRight: 4, verticalAlign: 'middle' }} />
-                        {cal.title}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                {checklist.filter(item => checklistFilter === null || !item.calendarId || item.calendarId === checklistFilter).length > 0 &&
-                  checklist.filter(item => checklistFilter === null || !item.calendarId || item.calendarId === checklistFilter).map(item => (
+                <p className="checklist-title">checklist</p>
+                {checklist.length > 0 && checklist.map(item => (
                   <div
                     key={item.id}
                     className="checklist-item"
