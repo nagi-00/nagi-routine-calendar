@@ -1000,6 +1000,65 @@
       font-family: HJSS, sans-serif;
       letter-spacing: 0.04em;
     }
+
+    /* ── 사이드바 backdrop (모바일) ── */
+    .sidebar-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.22);
+      z-index: 9;
+    }
+
+    /* ── 체크리스트 카테고리 필터 ── */
+    .checklist-filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 10px;
+    }
+    .checklist-filter-btn {
+      font-size: 10px;
+      padding: 3px 9px;
+      border-radius: 10px;
+      border: none;
+      background: var(--bg);
+      color: var(--text-muted);
+      cursor: pointer;
+      box-shadow: 1px 1px 3px var(--sh-dark), -1px -1px 2px var(--sh-light);
+      transition: box-shadow 0.12s, color 0.12s;
+      font-family: 'HJSS', sans-serif;
+      letter-spacing: 0.04em;
+    }
+    .checklist-filter-btn.active {
+      box-shadow: inset 1px 1px 3px var(--sh-dark), inset -1px -1px 2px var(--sh-light);
+      color: var(--text-pri);
+    }
+
+    /* ── 모바일 최적화 ── */
+    @media (max-width: 640px) {
+      .sidebar-backdrop.open { display: block; }
+      .sidebar { z-index: 30; width: 280px; padding: 22px 18px; }
+      .sidebar.collapsed { transform: translateX(-280px); }
+      .sidebar.right-side.collapsed { transform: translateX(280px); }
+      .toggle-button { left: 280px; top: 12px; }
+      .toggle-button.collapsed { left: 0; }
+      .toggle-button.right-side { right: 280px; left: auto; }
+      .toggle-button.right-side.collapsed { right: 0; }
+      .main-content {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        padding: 18px 10px;
+      }
+      .calendar-container {
+        width: calc(100vw - 20px);
+        max-width: 420px;
+        padding: 20px 16px;
+      }
+      .cal-drag-handle { opacity: 0.45; }
+      .checklist-card { margin: 12px 0; }
+      #calendar-export-area { border-radius: 20px !important; }
+    }
   </style>
 </head>
 <body>
@@ -1172,7 +1231,7 @@
   }
 
   function App() {
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false);
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(() => window.innerWidth <= 640);
     const [currentDate, setCurrentDate] = React.useState(new Date());
     const [calendars, setCalendars] = React.useState([]);
     const [selectedCalendar, setSelectedCalendar] = React.useState(null);
@@ -1197,7 +1256,9 @@
     const [focusMessage, setFocusMessage] = React.useState('');
 
     // export 상태: 'idle' | 'loading' | 'copied' | 'saved'
+    // export 상태: 'idle' | 'loading' | 'copied' | 'download'
     const [exportStatus, setExportStatus] = React.useState('idle');
+    const [exportBlobUrl, setExportBlobUrl] = React.useState(null);
 
     // Pin 모달
     const defaultImgEdit = { rotate: 0, flipH: false, flipV: false, scale: 1.0, offsetX: 0, offsetY: 0 };
@@ -1212,6 +1273,7 @@
     const [newCheckItem, setNewCheckItem] = React.useState('');
     const [editingCheckId, setEditingCheckId] = React.useState(null);
     const [editingCheckText, setEditingCheckText] = React.useState('');
+    const [checklistFilter, setChecklistFilter] = React.useState(null); // null = 전체, calendarId = 해당 캘린더
 
     // 모아보기: 4개 초과 시 대표 캘린더 IDs (null = 순서대로 앞 4개)
     const [overviewPicks, setOverviewPicks] = React.useState(null);
@@ -1304,7 +1366,7 @@
 
     const addCheckItem = () => {
       if (!newCheckItem.trim()) return;
-      saveChecklist([...checklist, { id: genId(), text: newCheckItem.trim(), done: false, starred: false }]);
+      saveChecklist([...checklist, { id: genId(), text: newCheckItem.trim(), done: false, starred: false, calendarId: selectedCalendar }]);
       setNewCheckItem('');
     };
 
@@ -1367,20 +1429,18 @@
           navBtns.forEach(b => { b.style.visibility = ''; });
         }
 
-        let status = 'saved';
+        let status = 'copied';
         try {
           await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
-          status = 'copied';
         } catch {
+          // 클립보드 실패 시 다운로드 버튼 제공
+          if (exportBlobUrl) URL.revokeObjectURL(exportBlobUrl);
           const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `calendar-${currentDate.getFullYear()}-${currentDate.getMonth() + 1}.png`;
-          a.click();
-          URL.revokeObjectURL(url);
+          setExportBlobUrl(url);
+          status = 'download';
         }
         setExportStatus(status);
-        setTimeout(() => setExportStatus('idle'), 2200);
+        if (status === 'copied') setTimeout(() => setExportStatus('idle'), 2200);
       } catch (err) {
         console.error('export 실패:', err);
         setExportStatus('idle');
@@ -1708,6 +1768,38 @@
       draggedIdRef.current = null;
     };
 
+    // 터치 드래그 (모바일)
+    const handleTouchDragStart = (e, id) => {
+      draggedIdRef.current = id;
+    };
+    const handleTouchDragMove = (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
+      const item = el?.closest('[data-cal-id]');
+      if (item) {
+        const targetId = item.dataset.calId;
+        if (targetId && targetId !== draggedIdRef.current) setDragOverId(targetId);
+      }
+    };
+    const handleTouchDragEnd = (e) => {
+      e.preventDefault();
+      const fromId = draggedIdRef.current;
+      if (fromId && dragOverId && fromId !== dragOverId) {
+        const fromIdx = calendars.findIndex(c => c.id === fromId);
+        const toIdx   = calendars.findIndex(c => c.id === dragOverId);
+        if (fromIdx >= 0 && toIdx >= 0) {
+          const newCals = [...calendars];
+          const [moved] = newCals.splice(fromIdx, 1);
+          newCals.splice(toIdx, 0, moved);
+          setCalendars(newCals);
+          localStorage.setItem('nagi-cal-order', JSON.stringify(newCals.map(c => c.id)));
+        }
+      }
+      setDragOverId(null);
+      draggedIdRef.current = null;
+    };
+
     /********************************************************
      * (3-10) 파생 값
      ********************************************************/
@@ -1772,6 +1864,12 @@
     return (
       <div className="app-container">
 
+        {/* 모바일 사이드바 backdrop */}
+        <div
+          className={`sidebar-backdrop${!isSidebarCollapsed ? ' open' : ''}`}
+          onClick={() => setIsSidebarCollapsed(true)}
+        />
+
         {/* ── 사이드바 ── */}
         <div className={`sidebar ${isSidebarCollapsed ? 'collapsed' : ''} ${settings.sidebarPosition === 'right' ? 'right-side' : ''}`}>
           <p className="sidebar-title">List</p>
@@ -1828,6 +1926,7 @@
               return (
                 <div
                   key={cal.id}
+                  data-cal-id={cal.id}
                   className={`calendar-item ${selectedCalendar === cal.id ? 'selected' : ''} ${dragOverId === cal.id ? 'drag-over' : ''}`}
                   draggable
                   onDragStart={(e) => handleDragStart(e, cal.id)}
@@ -1836,7 +1935,13 @@
                   onDragEnd={handleDragEnd}
                   onClick={() => setSelectedCalendar(cal.id)}
                 >
-                  <span className="cal-drag-handle" title="드래그하여 순서 변경">⠿</span>
+                  <span
+                    className="cal-drag-handle"
+                    title="드래그하여 순서 변경"
+                    onTouchStart={(e) => { e.stopPropagation(); handleTouchDragStart(e, cal.id); }}
+                    onTouchMove={handleTouchDragMove}
+                    onTouchEnd={handleTouchDragEnd}
+                  >⠿</span>
                   <div className="cal-item-left">
                     <div className="cal-color-dot" style={{ background: cal.color }} />
                     <span className="cal-title-text">{cal.title}</span>
@@ -2427,8 +2532,31 @@
 
               {/* 체크리스트 */}
               <div className="checklist-card">
-                <p className="checklist-title">checklist</p>
-                {checklist.length > 0 && checklist.map(item => (
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <p className="checklist-title" style={{ marginBottom: 0 }}>checklist</p>
+                </div>
+                {/* 카테고리 필터 */}
+                {calendars.length > 0 && (
+                  <div className="checklist-filter-row">
+                    <button
+                      className={`checklist-filter-btn${checklistFilter === null ? ' active' : ''}`}
+                      onClick={() => setChecklistFilter(null)}
+                    >전체</button>
+                    {calendars.map(cal => (
+                      <button
+                        key={cal.id}
+                        className={`checklist-filter-btn${checklistFilter === cal.id ? ' active' : ''}`}
+                        onClick={() => setChecklistFilter(prev => prev === cal.id ? null : cal.id)}
+                        style={checklistFilter === cal.id ? { background: cal.color, color: '#fff', boxShadow: 'inset 1px 1px 3px rgba(0,0,0,0.18), inset -1px -1px 2px rgba(255,255,255,0.1)' } : {}}
+                      >
+                        <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: cal.color, marginRight: 4, verticalAlign: 'middle' }} />
+                        {cal.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {checklist.filter(item => checklistFilter === null || !item.calendarId || item.calendarId === checklistFilter).length > 0 &&
+                  checklist.filter(item => checklistFilter === null || !item.calendarId || item.calendarId === checklistFilter).map(item => (
                   <div
                     key={item.id}
                     className="checklist-item"
@@ -2550,16 +2678,26 @@
           </div>{/* /calendar-export-area */}
 
           {/* export 버튼 (캡처 대상 밖) */}
-          <button
-            className={`export-btn${exportStatus === 'copied' || exportStatus === 'saved' ? ' done' : ''}`}
-            onClick={exportCalendar}
-            disabled={exportStatus === 'loading'}
-          >
-            {exportStatus === 'loading' && '…'}
-            {exportStatus === 'copied'  && '✓ 클립보드에 복사됨'}
-            {exportStatus === 'saved'   && '✓ 저장됨'}
-            {exportStatus === 'idle'    && 'export'}
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button
+              className={`export-btn${exportStatus === 'copied' ? ' done' : ''}`}
+              onClick={exportCalendar}
+              disabled={exportStatus === 'loading' || exportStatus === 'download'}
+            >
+              {exportStatus === 'loading'  && '…'}
+              {exportStatus === 'copied'   && '✓ 클립보드에 복사됨'}
+              {(exportStatus === 'idle' || exportStatus === 'download') && 'export'}
+            </button>
+            {exportStatus === 'download' && exportBlobUrl && (
+              <a
+                href={exportBlobUrl}
+                download={`calendar-${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2,'0')}.png`}
+                className="export-btn done"
+                style={{ textDecoration: 'none' }}
+                onClick={() => { setTimeout(() => { setExportStatus('idle'); URL.revokeObjectURL(exportBlobUrl); setExportBlobUrl(null); }, 500); }}
+              >↓ 이미지 다운로드</a>
+            )}
+          </div>
           </React.Fragment>
         )}
 
