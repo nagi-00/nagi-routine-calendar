@@ -1068,8 +1068,8 @@
 
   const generateHarmoniousColors = (baseHue, count) => {
     if (count === 0) return [];
-    const sVals = [50, 42, 58, 46, 55, 38];
-    const lVals = [52, 44, 60, 48, 56, 42];
+    const sVals = [28, 22, 34, 25, 30, 20];
+    const lVals = [74, 68, 80, 72, 77, 66];
     const hueRange = Math.min(count - 1, 5) * 8;
     return Array.from({ length: count }, (_, i) => {
       const hue = count === 1 ? baseHue : ((baseHue - hueRange / 2 + i * hueRange / (count - 1)) + 360) % 360;
@@ -1078,12 +1078,12 @@
   };
 
   const PALETTE_PRESETS = [
-    { name: 'Greenery', label: '초록', baseHue: 125, swatch: '#6A9E72' },
-    { name: 'Lavender', label: '라벤더', baseHue: 268, swatch: '#8B7EC8' },
-    { name: 'Sunrise',  label: '노을',  baseHue: 22,  swatch: '#C88060' },
-    { name: 'Ocean',    label: '오션',  baseHue: 205, swatch: '#5A8FB0' },
-    { name: 'Rose',     label: '로즈',  baseHue: 345, swatch: '#C07080' },
-    { name: 'Mocha',    label: '모카',  baseHue: 30,  swatch: '#A08060' },
+    { name: 'Greenery', label: '초록', baseHue: 125, swatch: '#A8C9A8' },
+    { name: 'Lavender', label: '라벤더', baseHue: 268, swatch: '#BDB5D8' },
+    { name: 'Sunrise',  label: '노을',  baseHue: 22,  swatch: '#DDB8A8' },
+    { name: 'Ocean',    label: '오션',  baseHue: 205, swatch: '#A4BDD0' },
+    { name: 'Rose',     label: '로즈',  baseHue: 345, swatch: '#D8ADB6' },
+    { name: 'Mocha',    label: '모카',  baseHue: 30,  swatch: '#C8B89E' },
   ];
 
   const defaultSettings = {
