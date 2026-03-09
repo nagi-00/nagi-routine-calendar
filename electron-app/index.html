@@ -2244,15 +2244,48 @@
               <div className="checklist-card">
                 <p className="checklist-title">checklist</p>
                 {checklist.length > 0 && checklist.map(item => (
-                  <div key={item.id} className="checklist-item">
+                  <div
+                    key={item.id}
+                    className="checklist-item"
+                    style={item.starred ? { backgroundColor: settings.bgDark + '50', borderRadius: 8, margin: '2px -4px', padding: '5px 4px' } : {}}
+                  >
+                    <button
+                      className={`checklist-star${item.starred ? ' starred' : ''}`}
+                      onClick={() => starCheckItem(item.id)}
+                      title={item.starred ? '별표 해제' : '별표'}
+                    >{item.starred ? '★' : '☆'}</button>
                     <button
                       className={`checklist-check${item.done ? ' done' : ''}`}
                       onClick={() => toggleCheckItem(item.id)}
-                    >
-                      {item.done && <span style={{ fontSize: 8, color: 'var(--text-sub)', lineHeight: 1 }}>✓</span>}
-                    </button>
-                    <span className={`checklist-text${item.done ? ' done' : ''}`}>{item.text}</span>
-                    <button className="checklist-del" onClick={() => deleteCheckItem(item.id)}>×</button>
+                    />
+                    {editingCheckId === item.id ? (
+                      <>
+                        <input
+                          className="checklist-input"
+                          value={editingCheckText}
+                          onChange={e => setEditingCheckText(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') saveCheckEdit(item.id);
+                            if (e.key === 'Escape') cancelCheckEdit();
+                          }}
+                          autoFocus
+                          style={{ flex: 1 }}
+                        />
+                        <button className="checklist-del" onClick={() => saveCheckEdit(item.id)} style={{ opacity: 1, fontSize: 12 }}>✓</button>
+                        <button className="checklist-del" onClick={cancelCheckEdit} style={{ opacity: 1 }}>×</button>
+                      </>
+                    ) : (
+                      <>
+                        <span className={`checklist-text${item.done ? ' done' : ''}`}>{item.text}</span>
+                        <button
+                          className="checklist-del"
+                          onClick={() => editCheckItem(item.id, item.text)}
+                          title="편집"
+                          style={{ fontSize: 11 }}
+                        >✎</button>
+                        <button className="checklist-del" onClick={() => deleteCheckItem(item.id)}>×</button>
+                      </>
+                    )}
                   </div>
                 ))}
                 <div className="checklist-add-row">
