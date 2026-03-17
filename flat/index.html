@@ -1,0 +1,1512 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+  <style>
+    :root {
+      --bg:        #F7F7F7;
+      --surface:   #FFFFFF;
+      --border:    #E8E8E8;
+      --border-hi: #C8C8C8;
+      --text-1:    #191919;
+      --text-2:    #5C5C5C;
+      --text-3:    #ABABAB;
+      --hover:     #F2F2F2;
+      --press:     #EAEAEA;
+      --sidebar-w: 240px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; font-family:'Noto Sans KR',sans-serif; }
+    body { background:var(--bg); min-height:100vh; }
+
+    /* ── app layout ── */
+    .app-container { display:flex; min-height:100vh; position:relative; }
+
+    /* ── sidebar ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      height: 100vh;
+      position: fixed;
+      left: 0; top: 0;
+      transition: transform 0.25s ease;
+      z-index: 10;
+      padding: 24px 18px;
+      overflow-y: auto;
+    }
+    .sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-w))); }
+    .sidebar.right-side { left:auto; right:0; border-right:none; border-left:1px solid var(--border); }
+    .sidebar.right-side.collapsed { transform: translateX(var(--sidebar-w)); }
+
+    .sidebar-title {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text-3);
+      margin-bottom: 16px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    /* ── toggle button ── */
+    .toggle-button {
+      position: fixed;
+      left: var(--sidebar-w);
+      top: 16px;
+      z-index: 20;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 8px 12px;
+      cursor: pointer;
+      transition: left 0.25s ease, right 0.25s ease;
+      border-radius: 0 6px 6px 0;
+      color: var(--text-2);
+      font-size: 13px;
+      line-height: 1;
+    }
+    .toggle-button:hover { background: var(--hover); }
+    .toggle-button.collapsed { left: 0; }
+    .toggle-button.right-side { left:auto; right:var(--sidebar-w); border-radius:6px 0 0 6px; }
+    .toggle-button.right-side.collapsed { right:0; }
+
+    /* ── main content ── */
+    .main-content {
+      flex: 1;
+      padding: 32px 20px;
+      margin-left: var(--sidebar-w);
+      transition: margin-left 0.25s ease, margin-right 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .main-content.expanded { margin-left: 0; }
+    .main-content.right-sidebar { margin-left:0; margin-right:var(--sidebar-w); }
+    .main-content.right-sidebar.expanded { margin-right:0; }
+
+    /* ── calendar card ── */
+    .calendar-container {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 22px 20px;
+      width: 360px;
+      flex-shrink: 0;
+    }
+
+    .month-navigator {
+      display:flex; align-items:center; justify-content:space-between; margin-bottom:4px;
+    }
+    .month-title {
+      font-size: 15px; font-weight: 500; color: var(--text-1);
+    }
+    .nav-button {
+      background: transparent;
+      border: 1px solid var(--border);
+      padding: 6px 10px;
+      cursor: pointer;
+      color: var(--text-2);
+      font-size: 13px;
+      border-radius: 6px;
+      transition: background 0.12s;
+    }
+    .nav-button:hover { background: var(--hover); }
+    .nav-button:active { background: var(--press); }
+
+    .calendar-subtitle {
+      font-size: 10px;
+      color: var(--text-3);
+      text-align: center;
+      margin-bottom: 16px;
+      letter-spacing: 0.06em;
+    }
+
+    /* ── calendar grid ── */
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 34px);
+      gap: 4px;
+      justify-content: center;
+    }
+    .day-wrapper { display:flex; flex-direction:column; align-items:center; gap:2px; }
+    .calendar-day {
+      width:34px; height:34px;
+      display:flex; align-items:center; justify-content:center;
+      font-size: 12px;
+      border: none;
+      cursor: pointer;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--text-1);
+      transition: background 0.1s;
+      touch-action: manipulation;
+      user-select: none;
+    }
+    .calendar-day.day-header {
+      font-size: 10px; color: var(--text-3); cursor:default; font-weight:500; letter-spacing:0.04em;
+    }
+    .calendar-day:not(.day-header):not(.day-empty):hover { background: var(--hover); }
+    .calendar-day:disabled { cursor: default; }
+    .pin-dot { width:3px; height:3px; border-radius:50%; opacity:0.8; }
+
+    /* ── sidebar calendar list ── */
+    .calendar-list { margin-bottom:16px; }
+    .calendar-item {
+      padding: 8px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      color: var(--text-2);
+      font-size: 13px;
+      gap: 6px;
+      transition: background 0.1s;
+    }
+    .calendar-item:hover { background: var(--hover); }
+    .calendar-item.selected { background: var(--press); color: var(--text-1); font-weight:500; }
+    .calendar-item.drag-over { border-top: 2px solid var(--border-hi); }
+    .cal-item-left { display:flex; align-items:center; gap:7px; flex:1; min-width:0; }
+    .cal-color-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
+    .cal-title-text { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .cal-item-actions {
+      display:flex; gap:2px; flex-shrink:0;
+      opacity:0; pointer-events:none; transition:opacity 0.12s;
+    }
+    .calendar-item:hover .cal-item-actions { opacity:1; pointer-events:auto; }
+
+    .icon-btn {
+      background:none; border:none; cursor:pointer;
+      color:var(--text-3); padding:3px;
+      border-radius:4px; transition:color 0.12s, background 0.12s;
+      display:flex; align-items:center; justify-content:center;
+    }
+    .icon-btn:hover { color:var(--text-2); background:var(--hover); }
+    .icon-btn.del:hover { color:#C0796A; background:#FEF2F0; }
+
+    /* ── inline edit form ── */
+    .cal-edit-form {
+      display:flex; flex-direction:column; gap:6px; width:100%;
+      padding:8px 10px; border-radius:6px; margin-bottom:4px;
+      background:var(--surface); border:1px solid var(--border);
+    }
+    .cal-edit-row { display:flex; gap:5px; align-items:center; }
+
+    /* ── new calendar form ── */
+    .new-calendar-form { margin-top:16px; }
+    .input-text {
+      width:100%; padding:8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom:8px;
+      background: var(--surface);
+      color: var(--text-1);
+      outline:none; font-size:13px;
+      transition: border-color 0.12s;
+    }
+    .input-text:focus { border-color: var(--border-hi); }
+    .input-text::placeholder { color:var(--text-3); }
+
+    .input-text-sm {
+      flex:1; padding:5px 9px;
+      border:1px solid var(--border); border-radius:5px;
+      background:var(--surface); color:var(--text-1);
+      outline:none; font-size:12px; min-width:0;
+      transition: border-color 0.12s;
+    }
+    .input-text-sm:focus { border-color:var(--border-hi); }
+
+    .color-picker-container { display:flex; gap:8px; }
+    .color-picker {
+      width:36px; height:36px; border:1px solid var(--border);
+      border-radius:6px; cursor:pointer; background:var(--surface); padding:2px;
+    }
+    .color-picker-sm {
+      width:28px; height:28px; border:1px solid var(--border);
+      border-radius:5px; cursor:pointer; background:var(--surface); padding:1px; flex-shrink:0;
+    }
+
+    .add-button {
+      flex-grow:1; padding:8px;
+      background:var(--text-1); border:none; border-radius:6px;
+      cursor:pointer; color:#fff; font-size:13px;
+      transition:opacity 0.12s;
+    }
+    .add-button:hover { opacity:0.82; }
+    .add-button:active { opacity:0.7; }
+
+    .sm-button {
+      padding:5px 10px;
+      background:transparent; border:1px solid var(--border); border-radius:5px;
+      cursor:pointer; color:var(--text-2); font-size:11px;
+      transition:background 0.12s; white-space:nowrap;
+    }
+    .sm-button:hover { background:var(--hover); }
+    .sm-button:active { background:var(--press); }
+
+    /* ── focus widget ── */
+    .focus-widget {
+      width:100%; max-width:360px; margin-top:14px;
+      background:var(--surface); border:1px solid var(--border); border-radius:10px;
+      padding:16px 18px;
+    }
+    .focus-widget-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+    .focus-widget-label { font-size:9px; color:var(--text-3); letter-spacing:0.12em; text-transform:uppercase; }
+    .focus-widget-text { font-size:12px; color:var(--text-2); line-height:1.7; }
+    .focus-refresh-btn {
+      background:none; border:none; cursor:pointer; color:var(--text-3);
+      font-size:14px; padding:2px 4px; border-radius:4px; transition:color 0.12s;
+    }
+    .focus-refresh-btn:hover { color:var(--text-2); }
+
+    /* ── export button ── */
+    .export-btn {
+      display:inline-flex; align-items:center; gap:5px;
+      margin-top:12px; padding:8px 18px;
+      background:transparent; border:1px solid var(--border); border-radius:6px;
+      cursor:pointer; color:var(--text-2); font-size:11px; letter-spacing:0.06em;
+      transition:background 0.12s, color 0.12s, border-color 0.12s;
+    }
+    .export-btn:hover { background:var(--hover); border-color:var(--border-hi); }
+    .export-btn.done { color:#4A8E5C; border-color:#A8C9A8; }
+
+    /* ── postit (flat card) ── */
+    .postit-col { display:flex; flex-direction:column; gap:12px; padding-top:10px; flex-shrink:0; }
+    .postit {
+      width:160px; background:var(--surface);
+      border:1px solid var(--border); border-radius:6px;
+      padding:14px 14px 14px 16px;
+      position:relative; overflow:hidden;
+    }
+    .postit-tack { /* color accent left border via inline style */ }
+    .postit-day-bg {
+      position:absolute; bottom:-4px; right:8px;
+      font-size:56px; font-weight:700; line-height:1;
+      opacity:0.04; color:var(--text-1);
+      user-select:none; pointer-events:none; letter-spacing:-0.02em;
+    }
+    .postit-date { font-size:9px; color:var(--text-3); letter-spacing:0.1em; margin-bottom:6px; text-transform:uppercase; }
+    .postit-memo { font-size:12px; color:var(--text-1); line-height:1.65; white-space:pre-wrap; word-break:break-word; position:relative; z-index:1; }
+    .postit-actions { display:none; position:absolute; top:6px; right:6px; gap:3px; z-index:3; }
+    .postit:hover .postit-actions { display:flex; }
+    .postit-btn {
+      width:20px; height:20px; border-radius:4px;
+      background:var(--surface); border:1px solid var(--border);
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      color:var(--text-3); transition:color 0.12s; padding:0;
+    }
+    .postit-btn:hover { color:var(--text-2); background:var(--hover); }
+    .postit-btn.del:hover { color:#C0796A; background:#FEF2F0; }
+
+    /* ── modal ── */
+    .modal-overlay {
+      position:fixed; inset:0;
+      background:rgba(0,0,0,0.18); backdrop-filter:blur(4px);
+      display:flex; align-items:center; justify-content:center; z-index:200;
+    }
+    .modal-card {
+      background:var(--surface); border:1px solid var(--border);
+      border-radius:10px; padding:24px 22px; width:300px;
+    }
+    .modal-date-label { font-size:10px; color:var(--text-3); letter-spacing:0.1em; margin-bottom:3px; }
+    .modal-cal-label { font-size:12px; color:var(--text-2); margin-bottom:12px; }
+    .modal-textarea {
+      width:100%; min-height:100px; border:1px solid var(--border); border-radius:6px;
+      padding:10px 12px; background:var(--surface); color:var(--text-1);
+      outline:none; font-size:12px; resize:none; line-height:1.65; margin-bottom:12px;
+      transition:border-color 0.12s;
+    }
+    .modal-textarea:focus { border-color:var(--border-hi); }
+    .modal-textarea::placeholder { color:var(--text-3); }
+    .modal-actions { display:flex; gap:6px; justify-content:flex-end; }
+    .modal-hint { font-size:10px; color:var(--text-3); margin-bottom:10px; }
+
+    /* ── password screen ── */
+    .password-container {
+      background:var(--surface); border:1px solid var(--border); border-radius:10px;
+      padding:36px 28px; max-width:320px; margin:80px auto; text-align:center;
+    }
+    .password-title { font-size:13px; color:var(--text-2); margin-bottom:18px; letter-spacing:0.04em; }
+
+    /* ── settings panel ── */
+    .settings-panel { margin-top:20px; padding-top:16px; border-top:1px solid var(--border); }
+    .settings-toggle {
+      display:flex; align-items:center; justify-content:space-between;
+      cursor:pointer; font-size:11px; color:var(--text-2); letter-spacing:0.08em;
+      padding:3px 0; background:none; border:none; width:100%; text-transform:uppercase;
+    }
+    .settings-toggle:hover { color:var(--text-1); }
+    .settings-body { margin-top:14px; }
+    .settings-section-label {
+      font-size:9px; color:var(--text-3); letter-spacing:0.12em;
+      text-transform:uppercase; margin-bottom:6px;
+    }
+
+    .theme-dots { display:flex; gap:6px; margin-bottom:14px; }
+    .theme-dot {
+      width:18px; height:18px; border-radius:50%;
+      border:2px solid transparent; cursor:pointer; transition:border-color 0.12s;
+    }
+    .theme-dot.active { border-color:var(--border-hi); }
+
+    /* ── palette presets ── */
+    .palette-dots { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:8px; }
+    .palette-dot-btn {
+      display:flex; flex-direction:column; align-items:center; gap:2px;
+      background:none; border:1px solid transparent; cursor:pointer;
+      padding:4px; border-radius:6px; transition:border-color 0.12s;
+    }
+    .palette-dot-btn:hover { border-color:var(--border); }
+    .palette-dot-btn.active { border-color:var(--border-hi); background:var(--hover); }
+    .palette-dot-circle { width:18px; height:18px; border-radius:50%; }
+    .palette-dot-label { font-size:8px; color:var(--text-3); letter-spacing:0.04em; }
+
+    /* ── focus msg items ── */
+    .focus-msg-item { display:flex; align-items:flex-start; gap:5px; margin-bottom:5px; font-size:11px; color:var(--text-2); line-height:1.5; }
+    .focus-msg-text { flex:1; min-width:0; word-break:break-word; }
+    .focus-add-row { display:flex; gap:5px; margin-top:6px; align-items:flex-end; }
+    .focus-add-textarea {
+      flex:1; min-height:40px; border:1px solid var(--border); border-radius:5px;
+      padding:6px 8px; background:var(--surface); color:var(--text-1);
+      outline:none; font-size:11px; resize:none; line-height:1.5;
+      transition:border-color 0.12s;
+    }
+    .focus-add-textarea:focus { border-color:var(--border-hi); }
+
+    /* ── checklist ── */
+    .checklist-card {
+      background:var(--surface); border:1px solid var(--border); border-radius:10px;
+      padding:14px 16px; margin-top:12px; width:100%;
+    }
+    .checklist-title { font-size:9px; color:var(--text-3); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:8px; }
+    .checklist-item { display:flex; align-items:center; gap:7px; padding:4px 0; border-bottom:1px solid var(--border); }
+    .checklist-item:last-child { border-bottom:none; }
+    .checklist-check {
+      width:15px; height:15px; border-radius:50%;
+      border:1px solid var(--border-hi); background:var(--surface);
+      cursor:pointer; display:flex; align-items:center; justify-content:center;
+      flex-shrink:0; padding:0; transition:background 0.1s, border-color 0.1s;
+    }
+    .checklist-check.done { background:var(--text-2); border-color:var(--text-2); }
+    .checklist-text { flex:1; font-size:12px; color:var(--text-2); line-height:1.4; transition:opacity 0.12s; word-break:break-all; }
+    .checklist-text.done { opacity:0.35; text-decoration:line-through; }
+    .checklist-del {
+      background:transparent; border:none; color:var(--text-3); cursor:pointer;
+      padding:0 2px; font-size:13px; line-height:1; opacity:0; transition:opacity 0.12s; flex-shrink:0;
+    }
+    .checklist-item:hover .checklist-del { opacity:1; }
+    .checklist-star {
+      background:transparent; border:none; cursor:pointer; color:var(--text-3);
+      font-size:10px; padding:0 1px; line-height:1; opacity:0; transition:opacity 0.12s, color 0.12s; flex-shrink:0;
+    }
+    .checklist-item:hover .checklist-star { opacity:1; }
+    .checklist-star.starred { opacity:1; color:var(--text-2); }
+    .checklist-add-row { display:flex; gap:5px; margin-top:8px; align-items:center; }
+    .checklist-input {
+      flex:1; background:var(--surface); border:1px solid var(--border); border-radius:5px;
+      padding:4px 9px; font-size:11px; color:var(--text-1); outline:none; min-width:0;
+      transition:border-color 0.12s;
+    }
+    .checklist-input:focus { border-color:var(--border-hi); }
+    .checklist-add-btn {
+      background:var(--text-1); border:none; border-radius:5px; width:26px; height:26px;
+      cursor:pointer; color:#fff; font-size:17px; line-height:1;
+      display:flex; align-items:center; justify-content:center; flex-shrink:0; padding:0;
+    }
+
+    /* ── memos modal ── */
+    .memos-modal-card {
+      background:var(--surface); border:1px solid var(--border); border-radius:10px;
+      padding:28px 24px; width:460px; max-width:92vw; max-height:80vh; overflow-y:auto;
+    }
+    .memos-modal-title { font-size:10px; color:var(--text-3); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:16px; }
+    .memo-group-label { font-size:9px; color:var(--text-3); letter-spacing:0.1em; text-transform:uppercase; margin:14px 0 6px; }
+    .memo-entry { background:var(--hover); border-radius:6px; padding:12px 14px; margin-bottom:6px; }
+    .memo-entry-date { font-size:9px; color:var(--text-3); letter-spacing:0.08em; margin-bottom:5px; }
+    .memo-entry-text { font-size:11px; color:var(--text-2); line-height:1.65; white-space:pre-wrap; word-break:break-word; }
+    .memo-entry-img { width:100%; border-radius:6px; margin-top:6px; display:block; }
+    .memos-empty { font-size:12px; color:var(--text-3); text-align:center; padding:28px 0; }
+
+    /* ── drag handle ── */
+    .cal-drag-handle {
+      cursor:grab; color:var(--text-3); font-size:12px; padding:0 2px;
+      opacity:0; transition:opacity 0.12s; flex-shrink:0; line-height:1; user-select:none;
+    }
+    .calendar-item:hover .cal-drag-handle { opacity:1; }
+    .cal-drag-handle:active { cursor:grabbing; }
+
+    /* ── sidebar backdrop (mobile) ── */
+    .sidebar-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.2); z-index:9; }
+
+    /* ── mobile ── */
+    @media (max-width: 640px) {
+      :root { --sidebar-w: 260px; }
+      .sidebar-backdrop.open { display:block; }
+      .sidebar { z-index:30; padding:20px 16px; }
+      .toggle-button { top:10px; }
+      .main-content { margin-left:0 !important; margin-right:0 !important; padding:14px 10px; }
+      .calendar-container { width:calc(100vw - 20px); max-width:400px; padding:18px 14px; }
+      .cal-drag-handle { opacity:0.4; }
+      #calendar-export-area { border-radius:14px !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script type="text/babel">
+  const firebaseConfig = {
+    apiKey: "AIzaSyC7-uDX9U7jwXywrJTq2N29wv3bxmFSTlk",
+    authDomain: "nagi-routine.firebaseapp.com",
+    projectId: "nagi-routine",
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  function PasswordGuard({ children }) {
+    const [inputPwd, setInputPwd] = React.useState('');
+    const [isAuthorized, setIsAuthorized] = React.useState(false);
+    const check = () => {
+      if (inputPwd === 'demian') setIsAuthorized(true);
+      else alert('Please try again.');
+    };
+    if (!isAuthorized) return (
+      <div className="password-container">
+        <p className="password-title">Enter the password.</p>
+        <input type="password" className="input-text" value={inputPwd}
+          onChange={e => setInputPwd(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && check()} />
+        <button className="add-button" style={{width:'100%',marginTop:10}} onClick={check}>▼</button>
+      </div>
+    );
+    return children;
+  }
+
+  const IconPen = ({ size=11 }) => (
+    <svg width={size} height={size} viewBox="0 0 16 16" fill="none"
+      stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M11.5 1.5 L14.5 4.5 L5 14 L1.5 14.5 L2 11 Z" />
+      <line x1="9" y1="3.5" x2="12.5" y2="7" />
+    </svg>
+  );
+  const IconX = ({ size=9 }) => (
+    <svg width={size} height={size} viewBox="0 0 12 12" fill="none"
+      stroke="currentColor" strokeWidth="1.7" strokeLinecap="round">
+      <line x1="2" y1="2" x2="10" y2="10" />
+      <line x1="10" y1="2" x2="2" y2="10" />
+    </svg>
+  );
+
+  const getContrastColor = (hex) => {
+    if (!hex || hex.length < 7) return '#191919';
+    const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
+    return (0.299*r + 0.587*g + 0.114*b)/255 > 0.55 ? '#191919' : '#FFFFFF';
+  };
+
+  const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+
+  const THEMES = [
+    { name:'Default', bg:'#F7F7F7', dark:'#E8E8E8', light:'#FFFFFF' },
+    { name:'Warm',    bg:'#F5F0EB', dark:'#DDD5CC', light:'#FFFCF9' },
+    { name:'Cool',    bg:'#EEF1F5', dark:'#D8E0EB', light:'#FFFFFF' },
+    { name:'Cream',   bg:'#F5F0E5', dark:'#DDD8CB', light:'#FFFDF5' },
+    { name:'Stone',   bg:'#EDEDEC', dark:'#D8D8D6', light:'#FFFFFF' },
+  ];
+
+  const applyTheme = (s) => {
+    document.documentElement.style.setProperty('--bg',        s.bgColor  || '#F7F7F7');
+    document.documentElement.style.setProperty('--surface',   s.bgLight  || '#FFFFFF');
+    document.documentElement.style.setProperty('--border',    s.bgDark   || '#E8E8E8');
+    // border-hi: slighly darker — just use bgDark as-is for simplicity
+    document.documentElement.style.setProperty('--border-hi', s.bgDark   || '#C8C8C8');
+  };
+
+  const hslToHex = (h,s,l) => {
+    h=((h%360)+360)%360; s/=100; l/=100;
+    const a=s*Math.min(l,1-l);
+    const f=n=>{const k=(n+h/30)%12; return Math.round(255*(l-a*Math.max(Math.min(k-3,9-k,1),-1))).toString(16).padStart(2,'0');};
+    return '#'+f(0)+f(8)+f(4);
+  };
+
+  const generateHarmoniousColors = (baseHue, count) => {
+    if(count===0) return [];
+    const sVals=[28,22,34,25,30,20], lVals=[74,68,80,72,77,66];
+    const hueRange=Math.min(count-1,5)*8;
+    return Array.from({length:count},(_,i)=>{
+      const hue=count===1?baseHue:((baseHue-hueRange/2+i*hueRange/(count-1))+360)%360;
+      return hslToHex(hue, sVals[i%sVals.length], lVals[i%lVals.length]);
+    });
+  };
+
+  const PALETTE_PRESETS = [
+    { name:'Greenery', label:'초록',   baseHue:125, swatch:'#A8C9A8' },
+    { name:'Lavender', label:'라벤더', baseHue:268, swatch:'#BDB5D8' },
+    { name:'Sunrise',  label:'노을',   baseHue:22,  swatch:'#DDB8A8' },
+    { name:'Ocean',    label:'오션',   baseHue:205, swatch:'#A4BDD0' },
+    { name:'Rose',     label:'로즈',   baseHue:345, swatch:'#D8ADB6' },
+    { name:'Mocha',    label:'모카',   baseHue:30,  swatch:'#C8B89E' },
+  ];
+
+  const defaultSettings = {
+    bgColor: '#F7F7F7', bgDark: '#E8E8E8', bgLight: '#FFFFFF',
+    subtitle: '내면의 성장을 향한 여정',
+    sidebarPosition: 'left', blendMode: 'normal', weekStart: 'sun', focusMessages: [],
+  };
+
+  function App() {
+    const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(() => window.innerWidth <= 640);
+    const [currentDate, setCurrentDate] = React.useState(new Date());
+    const [calendars, setCalendars] = React.useState([]);
+    const [selectedCalendar, setSelectedCalendar] = React.useState(null);
+    const [newTitle, setNewTitle] = React.useState('');
+    const [newColor, setNewColor] = React.useState('#9CA3AF');
+    const [editingCalId, setEditingCalId] = React.useState(null);
+    const [editTitle, setEditTitle] = React.useState('');
+    const [editColor, setEditColor] = React.useState('#9CA3AF');
+    const [settings, setSettings] = React.useState(defaultSettings);
+    const [isSettingsOpen, setIsSettingsOpen] = React.useState(false);
+    const [newFocusMsg, setNewFocusMsg] = React.useState('');
+    const [editSubtitle, setEditSubtitle] = React.useState('');
+    const [editingFocusIdx, setEditingFocusIdx] = React.useState(null);
+    const [editingFocusText, setEditingFocusText] = React.useState('');
+    const [focusMessage, setFocusMessage] = React.useState('');
+    const [exportStatus, setExportStatus] = React.useState('idle');
+    const [exportBlobUrl, setExportBlobUrl] = React.useState(null);
+    const defaultImgEdit = { rotate:0, flipH:false, flipV:false, scale:1.0, offsetX:0, offsetY:0 };
+    const [pinModal, setPinModal] = React.useState({ open:false, dateKey:'', memo:'', image:null, imgEdit:defaultImgEdit });
+    const imgDragRef = React.useRef({ active:false, startX:0, startY:0, baseOffX:0, baseOffY:0 });
+    const [showMemos, setShowMemos] = React.useState(false);
+    const [checklist, setChecklist] = React.useState([]);
+    const [newCheckItem, setNewCheckItem] = React.useState('');
+    const [editingCheckId, setEditingCheckId] = React.useState(null);
+    const [editingCheckText, setEditingCheckText] = React.useState('');
+    const [overviewPicks, setOverviewPicks] = React.useState(null);
+    const pressTimer = React.useRef(null);
+    const didLongPress = React.useRef(false);
+    const [lastCalColors, setLastCalColors] = React.useState(null);
+    const [selectedPalette, setSelectedPalette] = React.useState(null);
+    const [dragOverId, setDragOverId] = React.useState(null);
+    const draggedIdRef = React.useRef(null);
+
+    React.useEffect(() => {
+      const saved = localStorage.getItem('nagi-flat-settings');
+      const s = saved ? { ...defaultSettings, ...JSON.parse(saved) } : { ...defaultSettings };
+      setSettings(s); setEditSubtitle(s.subtitle); applyTheme(s);
+      setChecklist(s.checklist || []);
+      if (s.focusMessages && s.focusMessages.length > 0) {
+        setFocusMessage(s.focusMessages[Math.floor(Math.random()*s.focusMessages.length)]);
+      } else {
+        fetch('./demian_focus_messages (1).json').then(r=>r.json()).then(data=>{
+          const msgs=data.messages||[];
+          if(msgs.length>0){
+            const newS={...s,focusMessages:msgs};
+            setSettings(newS); setFocusMessage(msgs[Math.floor(Math.random()*msgs.length)]);
+            localStorage.setItem('nagi-flat-settings',JSON.stringify(newS));
+          }
+        }).catch(()=>{});
+      }
+    }, []);
+
+    React.useEffect(() => {
+      const unsub = db.collection('calendars').onSnapshot(snapshot => {
+        const loaded = [];
+        snapshot.forEach(doc => loaded.push({ id:doc.id, ...doc.data() }));
+        const savedOrder = JSON.parse(localStorage.getItem('nagi-cal-order') || '[]');
+        if (savedOrder.length > 0) {
+          loaded.sort((a,b) => {
+            const ai=savedOrder.indexOf(a.id), bi=savedOrder.indexOf(b.id);
+            if(ai===-1&&bi===-1) return 0; if(ai===-1) return 1; if(bi===-1) return -1;
+            return ai-bi;
+          });
+        }
+        setCalendars(loaded);
+        setSelectedCalendar(prev => prev || (loaded.length>0 ? loaded[0].id : null));
+      }, err => console.error(err));
+      return () => unsub();
+    }, []);
+
+    React.useEffect(() => {
+      if (!pinModal.open) return;
+      const handlePaste = (e) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        for (const item of items) {
+          if (item.type.startsWith('image/')) {
+            const file = item.getAsFile(); if (!file) return;
+            const reader = new FileReader();
+            reader.onload = ev => setPinModal(prev => ({ ...prev, image:ev.target.result, imgEdit:defaultImgEdit }));
+            reader.readAsDataURL(file); break;
+          }
+        }
+      };
+      window.addEventListener('paste', handlePaste);
+      return () => window.removeEventListener('paste', handlePaste);
+    }, [pinModal.open]);
+
+    const saveSettings = (s) => {
+      localStorage.setItem('nagi-flat-settings', JSON.stringify(s));
+      setSettings(s); applyTheme(s);
+    };
+
+    const saveChecklist = (list) => {
+      setChecklist(list);
+      saveSettings({ ...settings, checklist: list });
+    };
+    const addCheckItem = () => {
+      if (!newCheckItem.trim()) return;
+      saveChecklist([...checklist, { id:genId(), text:newCheckItem.trim(), done:false, starred:false }]);
+      setNewCheckItem('');
+    };
+    const toggleCheckItem = id => saveChecklist(checklist.map(i => i.id===id ? {...i,done:!i.done} : i));
+    const deleteCheckItem = id => saveChecklist(checklist.filter(i => i.id!==id));
+    const editCheckItem = (id,text) => { setEditingCheckId(id); setEditingCheckText(text); };
+    const saveCheckEdit = id => {
+      if (!editingCheckText.trim()) return;
+      saveChecklist(checklist.map(i => i.id===id ? {...i,text:editingCheckText.trim()} : i));
+      setEditingCheckId(null); setEditingCheckText('');
+    };
+    const cancelCheckEdit = () => { setEditingCheckId(null); setEditingCheckText(''); };
+    const starCheckItem = id => saveChecklist(checklist.map(i => i.id===id ? {...i,starred:!i.starred} : i));
+
+    const exportCalendar = async () => {
+      if (exportStatus==='loading') return;
+      setExportStatus('loading');
+      try {
+        const el = document.getElementById('calendar-export-area');
+        const navBtns = el.querySelectorAll('.nav-button');
+        navBtns.forEach(b => { b.style.visibility='hidden'; });
+        await new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)));
+        let blob;
+        try {
+          const scale=2;
+          blob = await domtoimage.toBlob(el, {
+            bgcolor: settings.bgColor,
+            width: el.offsetWidth*scale, height: el.offsetHeight*scale,
+            style: { transform:`scale(${scale})`, transformOrigin:'top left', width:el.offsetWidth+'px', height:el.offsetHeight+'px' },
+          });
+        } finally {
+          navBtns.forEach(b => { b.style.visibility=''; });
+        }
+        let status='copied';
+        try {
+          await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+        } catch {
+          if (exportBlobUrl) URL.revokeObjectURL(exportBlobUrl);
+          const url = URL.createObjectURL(blob);
+          setExportBlobUrl(url); status='download';
+        }
+        setExportStatus(status);
+        if (status==='copied') setTimeout(() => setExportStatus('idle'), 2200);
+      } catch(err) {
+        console.error(err); setExportStatus('idle');
+      }
+    };
+
+    const applyImageTransforms = (dataUrl, { rotate, flipH, flipV, scale, offsetX=0, offsetY=0 }) =>
+      new Promise(resolve => {
+        const img = new Image();
+        img.onload = () => {
+          if (offsetX!==0 || offsetY!==0) {
+            const VW=300, VH=160, fitScale=Math.min(VW/img.width,VH/img.height)||1, totalScale=fitScale*scale;
+            const canvas=document.createElement('canvas'); canvas.width=VW; canvas.height=VH;
+            const ctx=canvas.getContext('2d');
+            ctx.translate(VW/2+offsetX, VH/2+offsetY);
+            ctx.rotate((rotate*Math.PI)/180);
+            ctx.scale(flipH?-totalScale:totalScale, flipV?-totalScale:totalScale);
+            ctx.drawImage(img,-img.width/2,-img.height/2);
+            resolve(canvas.toDataURL('image/jpeg',0.88));
+          } else {
+            const rad=(rotate*Math.PI)/180, sin=Math.abs(Math.sin(rad)), cos=Math.abs(Math.cos(rad));
+            const sw=img.width*scale, sh=img.height*scale;
+            const cw=Math.round(sw*cos+sh*sin), ch=Math.round(sw*sin+sh*cos);
+            const canvas=document.createElement('canvas'); canvas.width=cw; canvas.height=ch;
+            const ctx=canvas.getContext('2d');
+            ctx.translate(cw/2,ch/2); ctx.rotate(rad);
+            ctx.scale(flipH?-scale:scale, flipV?-scale:scale);
+            ctx.drawImage(img,-img.width/2,-img.height/2);
+            resolve(canvas.toDataURL('image/jpeg',0.88));
+          }
+        };
+        img.src=dataUrl;
+      });
+
+    const addCalendar = async () => {
+      if (!newTitle.trim()) return;
+      try {
+        await db.collection('calendars').add({ title:newTitle.trim(), color:newColor, completedDates:[], pinnedDates:{} });
+        setNewTitle(''); setNewColor('#9CA3AF');
+      } catch(err) { console.error(err); }
+    };
+
+    const startEditCalendar = (cal,e) => { e.stopPropagation(); setEditingCalId(cal.id); setEditTitle(cal.title); setEditColor(cal.color); };
+    const saveEditCalendar = async id => {
+      if (!editTitle.trim()) return;
+      try { await db.collection('calendars').doc(id).update({ title:editTitle.trim(), color:editColor }); setEditingCalId(null); }
+      catch(err) { console.error(err); }
+    };
+    const cancelEditCalendar = () => setEditingCalId(null);
+
+    const toggleDate = async (day) => {
+      if (!selectedCalendar) return;
+      const targetCal = calendars.find(c => c.id===selectedCalendar); if (!targetCal) return;
+      const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()+1}-${day}`;
+      const dates = [...(targetCal.completedDates||[])];
+      const idx = dates.indexOf(dateKey);
+      if (idx===-1) dates.push(dateKey); else dates.splice(idx,1);
+      try { await db.collection('calendars').doc(selectedCalendar).update({ completedDates:dates }); }
+      catch(err) { console.error(err); }
+    };
+
+    const deleteCalendar = async (calendarId,e) => {
+      e.stopPropagation();
+      if (!window.confirm('정말 이 캘린더를 삭제할까?')) return;
+      try {
+        await db.collection('calendars').doc(calendarId).delete();
+        if (selectedCalendar===calendarId) setSelectedCalendar(null);
+      } catch(err) { console.error(err); }
+    };
+
+    const openPinModal = (day) => {
+      if (!selectedCalendar) return;
+      const dateKey = `${currentDate.getFullYear()}-${currentDate.getMonth()+1}-${day}`;
+      const existing = (currentCalendar.pinnedDates||{})[dateKey]||{};
+      const memo = typeof existing==='string' ? existing : (existing.memo||'');
+      const image = typeof existing==='string' ? null : (existing.image||null);
+      setPinModal({ open:true, dateKey, memo, image, imgEdit:defaultImgEdit });
+    };
+
+    const savePinMemo = async () => {
+      if (!selectedCalendar) return;
+      let img = pinModal.image;
+      const ie = pinModal.imgEdit||defaultImgEdit;
+      if (img && (ie.rotate!==0||ie.flipH||ie.flipV||ie.scale!==1.0||ie.offsetX!==0||ie.offsetY!==0))
+        img = await applyImageTransforms(img, ie);
+      const newPinnedDates = { ...(currentCalendar.pinnedDates||{}) };
+      if (pinModal.memo.trim()||img) newPinnedDates[pinModal.dateKey] = { memo:pinModal.memo.trim(), image:img };
+      else delete newPinnedDates[pinModal.dateKey];
+      try {
+        await db.collection('calendars').doc(selectedCalendar).update({ pinnedDates:newPinnedDates });
+        setPinModal({ open:false, dateKey:'', memo:'', image:null, imgEdit:defaultImgEdit });
+      } catch(err) { console.error(err); }
+    };
+
+    const removePin = async (dateKey) => {
+      if (!selectedCalendar) return;
+      const np = { ...(currentCalendar.pinnedDates||{}) }; delete np[dateKey];
+      try { await db.collection('calendars').doc(selectedCalendar).update({ pinnedDates:np }); } catch(err) { console.error(err); }
+    };
+
+    const handleImageSelect = (e) => {
+      const file = e.target.files?.[0]; if (!file) return;
+      const reader = new FileReader();
+      reader.onload = ev => setPinModal(prev => ({ ...prev, image:ev.target.result, imgEdit:defaultImgEdit }));
+      reader.readAsDataURL(file);
+    };
+
+    const handlePressStart = (day) => {
+      didLongPress.current=false; clearTimeout(pressTimer.current);
+      pressTimer.current=setTimeout(()=>{ didLongPress.current=true; openPinModal(day); },600);
+    };
+    const handlePressEnd = () => clearTimeout(pressTimer.current);
+    const handleDayClick = (day) => { if(didLongPress.current) return; toggleDate(day); };
+    const navigateMonth = (dir) => setCurrentDate(prev => { const d=new Date(prev); d.setMonth(d.getMonth()+(dir==='prev'?-1:1)); return d; });
+    const toggleSidebar = () => setIsSidebarCollapsed(v=>!v);
+
+    const applyThemePreset = (theme) => saveSettings({ ...settings, bgColor:theme.bg, bgDark:theme.dark, bgLight:theme.light });
+    const saveSubtitle = () => saveSettings({ ...settings, subtitle:editSubtitle });
+    const addFocusMessage = () => {
+      if (!newFocusMsg.trim()) return;
+      const msgs=[...(settings.focusMessages||[]),newFocusMsg.trim()];
+      saveSettings({ ...settings, focusMessages:msgs });
+      setFocusMessage(newFocusMsg.trim()); setNewFocusMsg('');
+    };
+    const deleteFocusMessage = (idx) => {
+      const msgs=settings.focusMessages.filter((_,i)=>i!==idx);
+      saveSettings({ ...settings, focusMessages:msgs });
+      if(msgs.length>0) setFocusMessage(msgs[Math.floor(Math.random()*msgs.length)]); else setFocusMessage('');
+    };
+    const saveFocusEdit = (idx) => {
+      const t=editingFocusText.trim(); if(!t) return;
+      const msgs=settings.focusMessages.map((m,i)=>i===idx?t:m);
+      saveSettings({ ...settings, focusMessages:msgs });
+      setEditingFocusIdx(null); setEditingFocusText('');
+    };
+    const refreshFocusMessage = () => {
+      const msgs=settings.focusMessages; if(!msgs||msgs.length===0) return;
+      setFocusMessage(msgs[Math.floor(Math.random()*msgs.length)]);
+    };
+
+    const applyBulkPalette = async (preset) => {
+      if(calendars.length===0) return;
+      setLastCalColors(calendars.map(c=>({id:c.id,color:c.color})));
+      const newColors=generateHarmoniousColors(preset.baseHue,calendars.length);
+      try {
+        const batch=db.batch();
+        calendars.forEach((c,i)=>batch.update(db.collection('calendars').doc(c.id),{color:newColors[i]}));
+        await batch.commit(); setSelectedPalette(preset.name);
+      } catch(err) { console.error(err); }
+    };
+    const undoBulkPalette = async () => {
+      if(!lastCalColors) return;
+      try {
+        const batch=db.batch();
+        lastCalColors.forEach(({id,color})=>batch.update(db.collection('calendars').doc(id),{color}));
+        await batch.commit(); setLastCalColors(null); setSelectedPalette(null);
+      } catch(err) { console.error(err); }
+    };
+
+    const handleDragHandlePointerDown = (e,id) => {
+      e.currentTarget.setPointerCapture(e.pointerId);
+      draggedIdRef.current=id; document.body.style.cursor='grabbing';
+    };
+    const handleDragHandlePointerMove = (e) => {
+      if(!draggedIdRef.current) return;
+      const el=document.elementFromPoint(e.clientX,e.clientY);
+      const item=el?.closest('[data-cal-id]');
+      const targetId=item?.dataset?.calId;
+      if(targetId&&targetId!==draggedIdRef.current) setDragOverId(targetId);
+      else if(!targetId) setDragOverId(null);
+    };
+    const handleDragHandlePointerUp = () => {
+      document.body.style.cursor='';
+      const fromId=draggedIdRef.current;
+      if(fromId&&dragOverId&&fromId!==dragOverId){
+        const fromIdx=calendars.findIndex(c=>c.id===fromId);
+        const toIdx=calendars.findIndex(c=>c.id===dragOverId);
+        if(fromIdx>=0&&toIdx>=0){
+          const nc=[...calendars]; const [moved]=nc.splice(fromIdx,1); nc.splice(toIdx,0,moved);
+          setCalendars(nc); localStorage.setItem('nagi-cal-order',JSON.stringify(nc.map(c=>c.id)));
+        }
+      }
+      setDragOverId(null); draggedIdRef.current=null;
+    };
+
+    const currentCalendar = calendars.find(c=>c.id===selectedCalendar) || { completedDates:[], color:'#9CA3AF', pinnedDates:{} };
+    const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate();
+    const weekStart = settings.weekStart||'sun';
+    const DOW_LABELS = weekStart==='mon' ? ['MON','TUE','WED','THU','FRI','SAT','SUN'] : ['SUN','MON','TUE','WED','THU','FRI','SAT'];
+    const rawFirstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
+    const firstDay = weekStart==='mon' ? (rawFirstDay+6)%7 : rawFirstDay;
+    const todayObj = new Date();
+    const todayDay = (todayObj.getFullYear()===currentDate.getFullYear()&&todayObj.getMonth()===currentDate.getMonth()) ? todayObj.getDate() : -1;
+    const pinnedDates = currentCalendar.pinnedDates||{};
+    const monthPrefix = `${currentDate.getFullYear()}-${currentDate.getMonth()+1}-`;
+    const currentMonthPins = Object.entries(pinnedDates)
+      .filter(([k])=>k.startsWith(monthPrefix))
+      .sort(([a],[b])=>parseInt(a.split('-')[2])-parseInt(b.split('-')[2]));
+    const formatDateKey = (dk) => { const [y,m,d]=dk.split('-'); return `${y}. ${String(m).padStart(2,'0')}. ${String(d).padStart(2,'0')}`; };
+
+    const CloverDot = ({ colors }) => {
+      if(!colors||colors.length===0) return null;
+      const size=14, pr=3.6, off=2.5, cx=7, cy=7;
+      const petals=[{dx:-off,dy:-off},{dx:off,dy:-off},{dx:off,dy:off},{dx:-off,dy:off}];
+      return (
+        <svg width={size} height={size} style={{display:'block'}}>
+          {colors.slice(0,4).map((color,i)=>(
+            <circle key={i} cx={cx+petals[i].dx} cy={cy+petals[i].dy} r={pr} fill={color} opacity="0.92" />
+          ))}
+        </svg>
+      );
+    };
+
+    /* ── RENDER ── */
+    return (
+      <div className="app-container">
+        <div className={`sidebar-backdrop${!isSidebarCollapsed?' open':''}`} onClick={()=>setIsSidebarCollapsed(true)} />
+
+        {/* SIDEBAR */}
+        <div className={`sidebar${isSidebarCollapsed?' collapsed':''} ${settings.sidebarPosition==='right'?'right-side':''}`}>
+          <p className="sidebar-title">List</p>
+
+          <div className="calendar-list">
+            {calendars.length>0 && (
+              <div className={`calendar-item${selectedCalendar==='all'?' selected':''}`} onClick={()=>setSelectedCalendar('all')}>
+                <div className="cal-item-left">
+                  <div style={{width:10,height:10,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+                    <svg width="10" height="10" viewBox="0 0 10 10">
+                      <circle cx="3.2" cy="3.2" r="2.6" fill={calendars[0]?.color||'#aaa'} opacity="0.92"/>
+                      <circle cx="6.8" cy="3.2" r="2.6" fill={calendars[1]?.color||(calendars[0]?.color||'#aaa')} opacity="0.92"/>
+                      <circle cx="6.8" cy="6.8" r="2.6" fill={calendars[2]?.color||(calendars[0]?.color||'#aaa')} opacity="0.92"/>
+                      <circle cx="3.2" cy="6.8" r="2.6" fill={calendars[3]?.color||(calendars[0]?.color||'#aaa')} opacity="0.92"/>
+                    </svg>
+                  </div>
+                  <span className="cal-title-text">모아보기</span>
+                </div>
+              </div>
+            )}
+            {calendars.map(cal => {
+              if (editingCalId===cal.id) return (
+                <div key={cal.id} className="cal-edit-form">
+                  <input type="text" className="input-text-sm" value={editTitle}
+                    onChange={e=>setEditTitle(e.target.value)}
+                    onKeyDown={e=>e.key==='Enter'&&saveEditCalendar(cal.id)} autoFocus style={{marginBottom:0}} />
+                  <div className="cal-edit-row">
+                    <input type="color" className="color-picker-sm" value={editColor} onChange={e=>setEditColor(e.target.value)} />
+                    <button className="sm-button" style={{flex:1}} onClick={()=>saveEditCalendar(cal.id)}>저장</button>
+                    <button className="sm-button" onClick={cancelEditCalendar}>취소</button>
+                  </div>
+                </div>
+              );
+              return (
+                <div key={cal.id} data-cal-id={cal.id}
+                  className={`calendar-item${selectedCalendar===cal.id?' selected':''} ${dragOverId===cal.id?'drag-over':''}`}
+                  onClick={()=>setSelectedCalendar(cal.id)}>
+                  <span className="cal-drag-handle" title="드래그하여 순서 변경" style={{touchAction:'none'}}
+                    onPointerDown={e=>handleDragHandlePointerDown(e,cal.id)}
+                    onPointerMove={handleDragHandlePointerMove}
+                    onPointerUp={handleDragHandlePointerUp}
+                    onPointerCancel={handleDragHandlePointerUp}>⠿</span>
+                  <div className="cal-item-left">
+                    <div className="cal-color-dot" style={{background:cal.color}} />
+                    <span className="cal-title-text">{cal.title}</span>
+                  </div>
+                  <div className="cal-item-actions">
+                    <button className="icon-btn" onClick={e=>startEditCalendar(cal,e)} title="편집"><IconPen size={11}/></button>
+                    <button className="icon-btn del" onClick={e=>deleteCalendar(cal.id,e)} title="삭제"><IconX size={9}/></button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="new-calendar-form">
+            <input type="text" className="input-text" placeholder="Title here" value={newTitle}
+              onChange={e=>setNewTitle(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addCalendar()} />
+            <div className="color-picker-container">
+              <input type="color" className="color-picker" value={newColor} onChange={e=>setNewColor(e.target.value)} />
+              <button className="add-button" onClick={addCalendar}>Add</button>
+            </div>
+          </div>
+
+          <div style={{marginTop:14,marginBottom:2}}>
+            <button className="sm-button" style={{width:'100%'}} onClick={()=>setShowMemos(true)}>전체 메모</button>
+          </div>
+
+          <div className="settings-panel">
+            <button className="settings-toggle" onClick={()=>setIsSettingsOpen(v=>!v)}>
+              <span>Settings</span>
+              <span style={{fontSize:10}}>{isSettingsOpen?'▲':'▼'}</span>
+            </button>
+            {isSettingsOpen && (
+              <div className="settings-body">
+
+                <p className="settings-section-label">calendar palette</p>
+                <div className="palette-dots">
+                  {PALETTE_PRESETS.map(preset=>(
+                    <button key={preset.name} className={`palette-dot-btn${selectedPalette===preset.name?' active':''}`}
+                      title={preset.label} onClick={()=>applyBulkPalette(preset)}>
+                      <div className="palette-dot-circle" style={{background:preset.swatch}} />
+                      <span className="palette-dot-label">{preset.label}</span>
+                    </button>
+                  ))}
+                </div>
+                {lastCalColors && (
+                  <button className="sm-button" style={{marginBottom:14,fontSize:10}} onClick={undoBulkPalette}>↩ 되돌리기</button>
+                )}
+
+                <p className="settings-section-label">background</p>
+                <div className="theme-dots">
+                  {THEMES.map(theme=>(
+                    <button key={theme.name}
+                      className={`theme-dot${settings.bgColor===theme.bg?' active':''}`}
+                      title={theme.name} style={{background:theme.bg}}
+                      onClick={()=>applyThemePreset(theme)} />
+                  ))}
+                </div>
+
+                <p className="settings-section-label">subtitle</p>
+                <div className="cal-edit-row" style={{marginBottom:14}}>
+                  <input type="text" className="input-text-sm" value={editSubtitle}
+                    onChange={e=>setEditSubtitle(e.target.value)} onKeyDown={e=>e.key==='Enter'&&saveSubtitle()} />
+                  <button className="sm-button" onClick={saveSubtitle}>저장</button>
+                </div>
+
+                <p className="settings-section-label">sidebar</p>
+                <div style={{display:'flex',gap:6,marginBottom:10}}>
+                  {['left','right'].map(pos=>{
+                    const isActive=(settings.sidebarPosition||'left')===pos;
+                    return (
+                      <button key={pos} style={{
+                        flex:1,padding:'6px 0',border:`1px solid ${isActive?'var(--border-hi)':'var(--border)'}`,
+                        borderRadius:5,cursor:'pointer',
+                        background:isActive?'var(--press)':'transparent',
+                        color:isActive?'var(--text-1)':'var(--text-3)',fontSize:11,letterSpacing:'0.08em',
+                      }} onClick={()=>saveSettings({...settings,sidebarPosition:pos})}>
+                        {pos==='left'?'← 왼쪽':'오른쪽 →'}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <p className="settings-section-label">week start</p>
+                <div style={{display:'flex',gap:6,marginBottom:14}}>
+                  {[{val:'sun',label:'SUN'},{val:'mon',label:'MON'}].map(opt=>{
+                    const isActive=(settings.weekStart||'sun')===opt.val;
+                    return (
+                      <button key={opt.val} style={{
+                        flex:1,padding:'6px 0',border:`1px solid ${isActive?'var(--border-hi)':'var(--border)'}`,
+                        borderRadius:5,cursor:'pointer',
+                        background:isActive?'var(--press)':'transparent',
+                        color:isActive?'var(--text-1)':'var(--text-3)',fontSize:11,letterSpacing:'0.08em',
+                      }} onClick={()=>saveSettings({...settings,weekStart:opt.val})}>
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <p className="settings-section-label">color blend</p>
+                <div style={{display:'flex',gap:6,marginBottom:14}}>
+                  {[{val:'multiply',label:'multiply'},{val:'normal',label:'normal'}].map(opt=>{
+                    const isActive=(settings.blendMode||'normal')===opt.val;
+                    return (
+                      <button key={opt.val} style={{
+                        flex:1,padding:'6px 0',border:`1px solid ${isActive?'var(--border-hi)':'var(--border)'}`,
+                        borderRadius:5,cursor:'pointer',
+                        background:isActive?'var(--press)':'transparent',
+                        color:isActive?'var(--text-1)':'var(--text-3)',fontSize:11,letterSpacing:'0.08em',
+                      }} onClick={()=>saveSettings({...settings,blendMode:opt.val})}>
+                        {opt.label}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <p className="settings-section-label">focus</p>
+                <div>
+                  {(settings.focusMessages||[]).map((msg,idx)=>(
+                    <div key={idx} className="focus-msg-item">
+                      {editingFocusIdx===idx ? (
+                        <>
+                          <textarea className="focus-add-textarea" rows={2} value={editingFocusText}
+                            onChange={e=>setEditingFocusText(e.target.value)} autoFocus style={{flex:1}} />
+                          <div style={{display:'flex',flexDirection:'column',gap:3,flexShrink:0}}>
+                            <button className="sm-button" style={{fontSize:10,padding:'2px 6px'}} onClick={()=>saveFocusEdit(idx)}>저장</button>
+                            <button className="sm-button" style={{fontSize:10,padding:'2px 6px'}} onClick={()=>{setEditingFocusIdx(null);setEditingFocusText('');}}>취소</button>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <span className="focus-msg-text">{msg}</span>
+                          <button style={{background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',padding:2,flexShrink:0,display:'flex',alignItems:'center'}}
+                            onClick={()=>{setEditingFocusIdx(idx);setEditingFocusText(msg);}}><IconPen size={8}/></button>
+                          <button style={{background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',padding:2,flexShrink:0,display:'flex',alignItems:'center'}}
+                            onClick={()=>deleteFocusMessage(idx)}><IconX size={8}/></button>
+                        </>
+                      )}
+                    </div>
+                  ))}
+                  <div className="focus-add-row">
+                    <textarea className="focus-add-textarea" rows={2} placeholder="새 메시지 입력..." value={newFocusMsg} onChange={e=>setNewFocusMsg(e.target.value)} />
+                    <button className="sm-button" onClick={addFocusMessage}>+</button>
+                  </div>
+                </div>
+
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* TOGGLE */}
+        <button className={`toggle-button${isSidebarCollapsed?' collapsed':''} ${settings.sidebarPosition==='right'?'right-side':''}`} onClick={toggleSidebar}>
+          {settings.sidebarPosition==='right' ? (isSidebarCollapsed?'←':'→') : (isSidebarCollapsed?'→':'←')}
+        </button>
+
+        {/* MAIN */}
+        <div className={`main-content${isSidebarCollapsed?' expanded':''} ${settings.sidebarPosition==='right'?'right-sidebar':''}`}>
+
+        {/* OVERVIEW (모아보기) */}
+        {selectedCalendar==='all' ? (() => {
+          const activeCals = calendars.length>4
+            ? calendars.filter(c=>(overviewPicks??calendars.slice(0,4).map(c=>c.id)).includes(c.id))
+            : calendars;
+          return (
+            <div style={{
+              background:settings.bgColor||'#F7F7F7',
+              border:'1px solid var(--border)',borderRadius:10,
+              padding:24,width:420,maxWidth:420,boxSizing:'border-box',flexShrink:0,overflow:'hidden',
+            }}>
+              <div className="calendar-container" style={{width:'100%',maxWidth:'none',boxSizing:'border-box'}}>
+                <div className="month-navigator">
+                  <button className="nav-button" onClick={()=>navigateMonth('prev')}>←</button>
+                  <span className="month-title" onClick={()=>setCurrentDate(new Date())} title="오늘로 이동" style={{cursor:'pointer'}}>
+                    {currentDate.toLocaleString('en-US',{month:'long',year:'numeric'})}
+                  </span>
+                  <button className="nav-button" onClick={()=>navigateMonth('next')}>→</button>
+                </div>
+                <p className="calendar-subtitle">모아보기</p>
+
+                {calendars.length>4 && (
+                  <div style={{marginBottom:10}}>
+                    <p className="settings-section-label" style={{marginBottom:5}}>표시할 캘린더 (최대 4개)</p>
+                    <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                      {calendars.map(cal=>{
+                        const curPicks=overviewPicks??calendars.slice(0,4).map(c=>c.id);
+                        const isPicked=curPicks.includes(cal.id);
+                        return (
+                          <button key={cal.id} onClick={()=>{
+                            const cur=overviewPicks??calendars.slice(0,4).map(c=>c.id);
+                            if(isPicked) setOverviewPicks(cur.filter(id=>id!==cal.id));
+                            else if(cur.length<4) setOverviewPicks([...cur,cal.id]);
+                          }} style={{
+                            display:'flex',alignItems:'center',gap:4,
+                            padding:'3px 8px',border:`1px solid ${isPicked?'var(--border-hi)':'var(--border)'}`,
+                            borderRadius:5,cursor:'pointer',
+                            background:isPicked?'var(--press)':'transparent',
+                            fontSize:10,color:isPicked?'var(--text-1)':'var(--text-3)',maxWidth:120,overflow:'hidden',
+                          }}>
+                            <div style={{width:5,height:5,borderRadius:'50%',background:cal.color,flexShrink:0}} />
+                            <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{cal.title}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="calendar-grid" style={{marginBottom:6}}>
+                  {DOW_LABELS.map(d=><div key={d} className="calendar-day day-header">{d}</div>)}
+                </div>
+                <div className="calendar-grid">
+                  {Array(firstDay).fill(null).map((_,i)=><div key={`e-${i}`} className="calendar-day day-empty"/>)}
+                  {Array(daysInMonth).fill(null).map((_,i)=>{
+                    const day=i+1;
+                    const dateKey=`${currentDate.getFullYear()}-${currentDate.getMonth()+1}-${day}`;
+                    const doneCals=activeCals.filter(c=>c.completedDates.includes(dateKey));
+                    const colors=doneCals.map(c=>c.color);
+                    const isToday=day===todayDay;
+                    return (
+                      <div key={day} className="day-wrapper">
+                        <button className="calendar-day" disabled style={{
+                          fontWeight:isToday?700:'normal',
+                          border:isToday?'1px solid var(--border-hi)':'',
+                          position:'relative',
+                        }}>
+                          {day}
+                          {colors.length>0 && (
+                            <div style={{position:'absolute',bottom:2,right:2,mixBlendMode:settings.blendMode||'normal',borderRadius:'50%',overflow:'hidden',lineHeight:0}}>
+                              <CloverDot colors={colors} />
+                            </div>
+                          )}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{display:'flex',flexWrap:'wrap',gap:'4px 12px',marginTop:12}}>
+                  {activeCals.map(cal=>(
+                    <div key={cal.id} style={{display:'flex',alignItems:'center',gap:4}}>
+                      <div style={{width:6,height:6,borderRadius:'50%',background:cal.color}} />
+                      <span style={{fontSize:9,color:'var(--text-2)'}}>{cal.title}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          );
+        })() : (
+          <React.Fragment>
+          {/* EXPORT AREA */}
+          <div id="calendar-export-area" style={{
+            background:settings.bgColor||'#F7F7F7',
+            border:'1px solid var(--border)',borderRadius:10,
+            padding:24,display:'flex',gap:20,alignItems:'flex-start',
+          }}>
+            {/* LEFT: calendar + focus + checklist */}
+            <div style={{flex:'0 0 360px',width:360}}>
+              <div className="calendar-container">
+                <div className="month-navigator">
+                  <button className="nav-button" onClick={()=>navigateMonth('prev')}>←</button>
+                  <span className="month-title" onClick={()=>setCurrentDate(new Date())} title="오늘로 이동" style={{cursor:'pointer'}}>
+                    {currentDate.toLocaleString('en-US',{month:'long',year:'numeric'})}
+                  </span>
+                  <button className="nav-button" onClick={()=>navigateMonth('next')}>→</button>
+                </div>
+                <p className="calendar-subtitle">{settings.subtitle}</p>
+                <div className="calendar-grid" style={{marginBottom:6}}>
+                  {DOW_LABELS.map(d=><div key={d} className="calendar-day day-header">{d}</div>)}
+                </div>
+                <div className="calendar-grid">
+                  {Array(firstDay).fill(null).map((_,i)=><div key={`empty-${i}`} className="calendar-day day-empty"/>)}
+                  {Array(daysInMonth).fill(null).map((_,i)=>{
+                    const day=i+1;
+                    const dateKey=`${currentDate.getFullYear()}-${currentDate.getMonth()+1}-${day}`;
+                    const isCompleted=currentCalendar.completedDates.includes(dateKey);
+                    const isPinned=!!(pinnedDates[dateKey]);
+                    const isToday=day===todayDay;
+                    return (
+                      <div key={day} className="day-wrapper">
+                        <button className="calendar-day"
+                          onMouseDown={()=>handlePressStart(day)} onMouseUp={handlePressEnd} onMouseLeave={handlePressEnd}
+                          onTouchStart={()=>handlePressStart(day)} onTouchEnd={handlePressEnd}
+                          onClick={()=>handleDayClick(day)}
+                          style={{
+                            backgroundColor:isCompleted?currentCalendar.color:'transparent',
+                            mixBlendMode:isCompleted?(settings.blendMode||'normal'):'normal',
+                            color:isCompleted?getContrastColor(currentCalendar.color):'var(--text-1)',
+                            fontWeight:isToday?700:'normal',
+                            border:!isCompleted&&isToday?'1px solid var(--border-hi)':'',
+                          }}>
+                          {day}
+                        </button>
+                        {isPinned && <div className="pin-dot" style={{backgroundColor:currentCalendar.color}} />}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {focusMessage && (
+                <div className="focus-widget">
+                  <div className="focus-widget-header">
+                    <p className="focus-widget-label">focus</p>
+                    <button className="focus-refresh-btn" onClick={refreshFocusMessage} title="새 메시지">↺</button>
+                  </div>
+                  <p className="focus-widget-text">{focusMessage}</p>
+                </div>
+              )}
+
+              <div className="checklist-card">
+                <p className="checklist-title">checklist</p>
+                {checklist.length>0 && checklist.map(item=>(
+                  <div key={item.id} className="checklist-item"
+                    style={item.starred?{backgroundColor:'var(--hover)',borderRadius:5,margin:'2px -4px',padding:'4px 4px'}:{}}>
+                    <button className={`checklist-star${item.starred?' starred':''}`}
+                      style={item.starred?{color:currentCalendar.color,opacity:1}:{}}
+                      onClick={()=>starCheckItem(item.id)}>{item.starred?'★':'☆'}</button>
+                    <button className={`checklist-check${item.done?' done':''}`}
+                      style={item.done?{background:currentCalendar.color,borderColor:currentCalendar.color}:{}}
+                      onClick={()=>toggleCheckItem(item.id)} />
+                    {editingCheckId===item.id ? (
+                      <>
+                        <input className="checklist-input" value={editingCheckText}
+                          onChange={e=>setEditingCheckText(e.target.value)}
+                          onKeyDown={e=>{if(e.key==='Enter')saveCheckEdit(item.id);if(e.key==='Escape')cancelCheckEdit();}}
+                          autoFocus style={{flex:1}} />
+                        <button className="checklist-del" onClick={()=>saveCheckEdit(item.id)} style={{opacity:1,fontSize:11}}>✓</button>
+                        <button className="checklist-del" onClick={cancelCheckEdit} style={{opacity:1}}>×</button>
+                      </>
+                    ) : (
+                      <>
+                        <span className={`checklist-text${item.done?' done':''}`}>{item.text}</span>
+                        <button className="checklist-del" onClick={()=>editCheckItem(item.id,item.text)} title="편집" style={{fontSize:10}}>✎</button>
+                        <button className="checklist-del" onClick={()=>deleteCheckItem(item.id)}>×</button>
+                      </>
+                    )}
+                  </div>
+                ))}
+                <div className="checklist-add-row">
+                  <input className="checklist-input" value={newCheckItem}
+                    onChange={e=>setNewCheckItem(e.target.value)}
+                    onKeyDown={e=>e.key==='Enter'&&addCheckItem()} placeholder="새 항목 추가" />
+                  <button className="checklist-add-btn" onClick={addCheckItem}>+</button>
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT: postit notes */}
+            {currentMonthPins.length>0 && (
+              <div className="postit-col">
+                {currentMonthPins.map(([dateKey,pinData],idx)=>{
+                  const pin=pinData;
+                  const memo=typeof pin==='string'?pin:(pin?.memo||'');
+                  const img=typeof pin==='string'?null:(pin?.image||null);
+                  const dayNum=dateKey.split('-')[2];
+                  return (
+                    <div key={dateKey} className="postit"
+                      style={{borderLeft:`3px solid ${currentCalendar.color}`}}>
+                      <div className="postit-day-bg">{dayNum}</div>
+                      <p className="postit-date">{formatDateKey(dateKey)}</p>
+                      <p className="postit-memo">{memo}</p>
+                      {img ? <img src={img} alt="" style={{width:'100%',borderRadius:4,marginTop:6,display:'block'}} /> : null}
+                      <div className="postit-actions">
+                        <button className="postit-btn" onClick={()=>{
+                          const ex=currentCalendar.pinnedDates?.[dateKey]||{};
+                          const m=typeof ex==='string'?ex:(ex.memo||'');
+                          const im=typeof ex==='string'?null:(ex.image||null);
+                          setPinModal({open:true,dateKey,memo:m,image:im,imgEdit:defaultImgEdit});
+                        }} title="편집"><IconPen size={10}/></button>
+                        <button className="postit-btn del" onClick={()=>removePin(dateKey)} title="삭제"><IconX size={8}/></button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* EXPORT BUTTON */}
+          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',justifyContent:'center'}}>
+            <button className={`export-btn${exportStatus==='copied'?' done':''}`} onClick={exportCalendar}
+              disabled={exportStatus==='loading'||exportStatus==='download'}>
+              {exportStatus==='loading'&&'…'}
+              {exportStatus==='copied'&&'✓ 클립보드에 복사됨'}
+              {(exportStatus==='idle'||exportStatus==='download')&&'export'}
+            </button>
+            {exportStatus==='download'&&exportBlobUrl&&(
+              <a href={exportBlobUrl}
+                download={`calendar-${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}.png`}
+                className="export-btn done" style={{textDecoration:'none'}}
+                onClick={()=>{setTimeout(()=>{setExportStatus('idle');URL.revokeObjectURL(exportBlobUrl);setExportBlobUrl(null);},500);}}>
+                ↓ 이미지 다운로드</a>
+            )}
+          </div>
+          </React.Fragment>
+        )}
+        </div>
+
+        {/* PIN MODAL */}
+        {pinModal.open && (
+          <div className="modal-overlay" onClick={()=>setPinModal({open:false,dateKey:'',memo:'',image:null})}>
+            <div className="modal-card" onClick={e=>e.stopPropagation()}>
+              <p className="modal-date-label">{formatDateKey(pinModal.dateKey)}</p>
+              <p className="modal-cal-label">{currentCalendar.title||''}</p>
+              <p className="modal-hint">메모를 비우고 저장하면 핀이 제거돼요.</p>
+              <textarea className="modal-textarea" value={pinModal.memo}
+                onChange={e=>setPinModal(prev=>({...prev,memo:e.target.value}))}
+                placeholder="이 날짜에 대해 남겨두고 싶은 말" autoFocus />
+
+              <div style={{marginBottom:12}}>
+                {pinModal.image ? (() => {
+                  const ie=pinModal.imgEdit||defaultImgEdit;
+                  const btnSt=(active)=>({
+                    padding:'4px 8px',border:`1px solid ${active?'var(--border-hi)':'var(--border)'}`,
+                    borderRadius:5,cursor:'pointer',
+                    background:active?'var(--press)':'transparent',
+                    color:active?'var(--text-1)':'var(--text-2)',fontSize:12,
+                  });
+                  return (
+                    <div>
+                      <div style={{
+                        position:'relative',width:'100%',height:150,overflow:'hidden',borderRadius:8,
+                        marginBottom:7,display:'flex',alignItems:'center',justifyContent:'center',
+                        cursor:'grab',userSelect:'none',border:'1px solid var(--border)',
+                      }}
+                        onPointerDown={e=>{
+                          e.currentTarget.setPointerCapture(e.pointerId);
+                          imgDragRef.current={active:true,startX:e.clientX,startY:e.clientY,
+                            baseOffX:(pinModal.imgEdit||defaultImgEdit).offsetX,baseOffY:(pinModal.imgEdit||defaultImgEdit).offsetY};
+                          e.currentTarget.style.cursor='grabbing';
+                        }}
+                        onPointerMove={e=>{
+                          if(!imgDragRef.current.active) return;
+                          const dx=e.clientX-imgDragRef.current.startX,dy=e.clientY-imgDragRef.current.startY;
+                          setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),offsetX:imgDragRef.current.baseOffX+dx,offsetY:imgDragRef.current.baseOffY+dy}}));
+                        }}
+                        onPointerUp={e=>{imgDragRef.current.active=false;e.currentTarget.releasePointerCapture(e.pointerId);e.currentTarget.style.cursor='grab';}}>
+                        <img src={pinModal.image} alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',filter:'blur(12px)',transform:'scale(1.15)',pointerEvents:'none',opacity:0.8}} />
+                        <img src={pinModal.image} alt="" style={{maxWidth:'100%',maxHeight:'100%',display:'block',position:'relative',zIndex:1,
+                          transform:`translate(${ie.offsetX}px,${ie.offsetY}px) rotate(${ie.rotate}deg) scaleX(${ie.flipH?-1:1}) scaleY(${ie.flipV?-1:1}) scale(${ie.scale})`,
+                          transformOrigin:'center',pointerEvents:'none'}} />
+                        <button onPointerDown={e=>e.stopPropagation()}
+                          onClick={e=>{e.stopPropagation();setPinModal(prev=>({...prev,image:null,imgEdit:defaultImgEdit}));}}
+                          style={{position:'absolute',top:5,right:5,zIndex:2,background:'rgba(0,0,0,0.4)',border:'none',borderRadius:'50%',
+                            width:20,height:20,cursor:'pointer',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',padding:0}}>
+                          <IconX size={8}/>
+                        </button>
+                        {(ie.offsetX!==0||ie.offsetY!==0)&&(
+                          <button onPointerDown={e=>e.stopPropagation()}
+                            onClick={e=>{e.stopPropagation();setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),offsetX:0,offsetY:0}}));}}
+                            style={{position:'absolute',bottom:5,right:5,zIndex:2,background:'rgba(0,0,0,0.3)',border:'none',borderRadius:4,
+                              padding:'2px 6px',cursor:'pointer',color:'#fff',fontSize:9}}>중앙 초기화</button>
+                        )}
+                      </div>
+                      <div style={{display:'flex',flexWrap:'wrap',gap:5,alignItems:'center'}}>
+                        <button style={btnSt(false)} title="90° 왼쪽" onClick={()=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),rotate:((prev.imgEdit||defaultImgEdit).rotate-90+360)%360}}))}>↺</button>
+                        <button style={btnSt(false)} title="90° 오른쪽" onClick={()=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),rotate:((prev.imgEdit||defaultImgEdit).rotate+90)%360}}))}>↻</button>
+                        <button style={btnSt(ie.flipH)} title="좌우 반전" onClick={()=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),flipH:!(prev.imgEdit||defaultImgEdit).flipH}}))}>↔</button>
+                        <button style={btnSt(ie.flipV)} title="상하 반전" onClick={()=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),flipV:!(prev.imgEdit||defaultImgEdit).flipV}}))}>↕</button>
+                        <input type="range" min="0.4" max="2.0" step="0.05" value={ie.scale}
+                          onChange={e=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),scale:parseFloat(e.target.value)}}))}
+                          style={{flex:1,minWidth:60,cursor:'pointer'}} title={`${Math.round(ie.scale*100)}%`} />
+                        <span style={{fontSize:10,color:'var(--text-3)',minWidth:28}}>{Math.round(ie.scale*100)}%</span>
+                      </div>
+                    </div>
+                  );
+                })() : (
+                  <div style={{display:'flex',alignItems:'center',gap:8}}>
+                    <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer'}}>
+                      <input type="file" accept="image/*" style={{display:'none'}} onChange={handleImageSelect} />
+                      <span style={{padding:'5px 12px',border:'1px solid var(--border)',borderRadius:5,fontSize:11,color:'var(--text-2)',cursor:'pointer'}}>+ 사진 첨부</span>
+                    </label>
+                    <span style={{fontSize:10,color:'var(--text-3)'}}>또는 Ctrl+V 붙여넣기</span>
+                  </div>
+                )}
+              </div>
+
+              <div className="modal-actions">
+                <button className="sm-button" onClick={()=>setPinModal({open:false,dateKey:'',memo:'',image:null})}>취소</button>
+                <button className="sm-button" style={{background:'var(--text-1)',color:'#fff',borderColor:'var(--text-1)'}} onClick={savePinMemo}>저장</button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ALL MEMOS MODAL */}
+        {showMemos && (() => {
+          const allMemos=[];
+          calendars.forEach(cal=>{
+            Object.entries(cal.pinnedDates||{}).forEach(([dateKey,pinData])=>{
+              const memo=typeof pinData==='string'?pinData:(pinData?.memo||'');
+              const img=typeof pinData==='string'?null:(pinData?.image||null);
+              if(memo||img) allMemos.push({dateKey,memo,img,calTitle:cal.title,calColor:cal.color});
+            });
+          });
+          allMemos.sort((a,b)=>{
+            const [ay,am,ad]=a.dateKey.split('-').map(Number);
+            const [by,bm,bd]=b.dateKey.split('-').map(Number);
+            return new Date(by,bm-1,bd)-new Date(ay,am-1,ad);
+          });
+          const grouped={};
+          allMemos.forEach(m=>{
+            const [y,mo]=m.dateKey.split('-');
+            const key=`${y}.${String(mo).padStart(2,'0')}`;
+            if(!grouped[key]) grouped[key]=[];
+            grouped[key].push(m);
+          });
+          return (
+            <div className="modal-overlay" onClick={()=>setShowMemos(false)}>
+              <div className="memos-modal-card" onClick={e=>e.stopPropagation()}>
+                <p className="memos-modal-title">전체 메모</p>
+                {allMemos.length===0 ? (
+                  <p className="memos-empty">아직 메모가 없어요.</p>
+                ) : (
+                  Object.entries(grouped).map(([monthLabel,entries])=>(
+                    <div key={monthLabel}>
+                      <p className="memo-group-label">{monthLabel}</p>
+                      {entries.map((m,i)=>(
+                        <div key={i} className="memo-entry">
+                          <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:5}}>
+                            <div style={{width:5,height:5,borderRadius:'50%',background:m.calColor,flexShrink:0}} />
+                            <span className="memo-entry-date">{m.calTitle} · {m.dateKey.replace(/-/g,'.')}</span>
+                          </div>
+                          {m.memo?<p className="memo-entry-text">{m.memo}</p>:null}
+                          {m.img?<img src={m.img} alt="" className="memo-entry-img"/>:null}
+                        </div>
+                      ))}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          );
+        })()}
+
+      </div>
+    );
+  }
+
+  const root = ReactDOM.createRoot(document.getElementById('root'));
+  root.render(<PasswordGuard><App /></PasswordGuard>);
+  </script>
+</body>
+</html>
