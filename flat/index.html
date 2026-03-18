@@ -13,94 +13,147 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+  <!-- REWRITTEN AS PHONE MOCKUP UI -->
   <style>
     :root {
-      --bg:          #EDE8DC;
-      --surface:     #F5F0E6;
-      --border:      #C8C0B0;
-      --border-hi:   #9E9080;
-      --text-1:      #1A1714;
-      --text-2:      #5C5652;
-      --text-3:      #A8A098;
-      --hover:       #E8E2D4;
-      --press:       #DED8CA;
-      --sidebar-w:   240px;
-      --radius-card: 0px;
+      --outer-bg:  #D6CFC0;
+      --frame-bg:  #1A1714;
+      --app-bg:    #EDE8DC;
+      --surface:   #F5F0E6;
+      --border:    #C8C0B0;
+      --border-hi: #9E9080;
+      --text-1:    #1A1714;
+      --text-2:    #5C5652;
+      --text-3:    #A8A098;
+      --hover:     #E8E2D4;
+      --press:     #DED8CA;
+      --accent:    #1A1714;
     }
     * { margin:0; padding:0; box-sizing:border-box; font-family:'Noto Sans KR',sans-serif; }
-    body { background:var(--bg); min-height:100vh; }
+    body { background:var(--outer-bg); min-height:100vh; }
 
-    /* ── app layout ── */
-    .app-container { display:flex; min-height:100vh; position:relative; }
-
-    /* ── sidebar ── */
-    .sidebar {
-      width: var(--sidebar-w);
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      height: 100vh;
-      position: fixed;
-      left: 0; top: 0;
-      transition: transform 0.25s ease;
-      z-index: 10;
-      padding: 24px 18px;
-      overflow-y: auto;
-    }
-    .sidebar.collapsed { transform: translateX(calc(-1 * var(--sidebar-w))); }
-    .sidebar.right-side { left:auto; right:0; border-right:none; border-left:1px solid var(--border); }
-    .sidebar.right-side.collapsed { transform: translateX(var(--sidebar-w)); }
-
-    .sidebar-title {
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--text-3);
-      margin-bottom: 16px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
+    /* ── page layout ── */
+    .page-wrapper {
+      min-height: 100vh;
+      background: var(--outer-bg);
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 40px 20px;
+      gap: 40px;
     }
 
-    /* ── toggle button ── */
-    .toggle-button {
-      position: fixed;
-      left: var(--sidebar-w);
-      top: 16px;
-      z-index: 20;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      padding: 8px 12px;
-      cursor: pointer;
-      transition: left 0.25s ease, right 0.25s ease;
-      border-radius: 0;
-      color: var(--text-2);
-      font-size: 13px;
-      line-height: 1;
+    /* ── phone mockup ── */
+    .phone-shell {
+      width: 390px;
+      min-height: 844px;
+      background: var(--frame-bg);
+      border-radius: 48px;
+      padding: 12px;
+      box-shadow: 0 30px 80px rgba(0,0,0,0.35), 0 0 0 1px rgba(255,255,255,0.08) inset;
+      position: relative;
+      flex-shrink: 0;
     }
-    .toggle-button:hover { background: var(--hover); }
-    .toggle-button.collapsed { left: 0; }
-    .toggle-button.right-side { left:auto; right:var(--sidebar-w); border-radius:0; }
-    .toggle-button.right-side.collapsed { right:0; }
-
-    /* ── main content ── */
-    .main-content {
-      flex: 1;
-      padding: 32px 20px;
-      margin-left: var(--sidebar-w);
-      transition: margin-left 0.25s ease, margin-right 0.25s ease;
+    .phone-screen {
+      background: var(--app-bg);
+      border-radius: 38px;
+      overflow: hidden;
+      height: 820px;
       display: flex;
       flex-direction: column;
-      align-items: center;
+      position: relative;
     }
-    .main-content.expanded { margin-left: 0; }
-    .main-content.right-sidebar { margin-left:0; margin-right:var(--sidebar-w); }
-    .main-content.right-sidebar.expanded { margin-right:0; }
+    .phone-notch {
+      width: 120px; height: 34px;
+      background: var(--frame-bg);
+      border-radius: 0 0 20px 20px;
+      margin: 0 auto;
+      flex-shrink: 0;
+      position: relative;
+      z-index: 5;
+    }
+    .phone-content {
+      flex: 1;
+      overflow-y: auto;
+      scrollbar-width: none;
+      padding: 0 0 80px 0;
+    }
+    .phone-content::-webkit-scrollbar { display: none; }
+    .phone-tab-bar {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 72px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-radius: 0 0 38px 38px;
+      display: flex;
+      align-items: center;
+      justify-content: space-around;
+      padding: 0 16px 10px;
+      z-index: 10;
+    }
+    .tab-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      background: none; border: none; cursor: pointer;
+      color: var(--text-3); font-size: 9px; letter-spacing: 0.08em;
+      text-transform: uppercase; padding: 6px 16px; border-radius: 14px;
+      transition: color 0.12s, background 0.12s;
+      font-family: 'DM Mono', monospace;
+    }
+    .tab-btn:hover { color: var(--text-2); background: var(--hover); }
+    .tab-btn.active { color: var(--accent); }
+    .tab-btn svg { width: 20px; height: 20px; stroke: currentColor; }
+    .tab-active-bar {
+      width: 4px; height: 4px; border-radius: 50%;
+      background: var(--accent); margin: 0 auto;
+    }
 
-    /* ── calendar card ── */
+    /* ── side panel (wide screen) ── */
+    .side-panel {
+      width: 300px;
+      flex-shrink: 0;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      max-height: calc(100vh - 80px);
+      overflow-y: auto;
+      position: sticky;
+      top: 40px;
+    }
+    @media (max-width: 999px) {
+      .side-panel { display: none; }
+    }
+
+    /* ── bottom sheet ── */
+    .bottom-sheet-overlay {
+      position: absolute; inset: 0; z-index: 100;
+      background: rgba(0,0,0,0.3);
+      display: flex; align-items: flex-end;
+      border-radius: 38px;
+      overflow: hidden;
+    }
+    .bottom-sheet {
+      background: var(--surface);
+      border-radius: 24px 24px 38px 38px;
+      width: 100%; max-height: 85%;
+      overflow-y: auto;
+      padding: 20px 20px 30px;
+      scrollbar-width: none;
+    }
+    .bottom-sheet::-webkit-scrollbar { display: none; }
+    .sheet-handle {
+      width: 36px; height: 4px; background: var(--border);
+      border-radius: 2px; margin: 0 auto 16px;
+    }
+
+    /* ── calendar card (inside phone) ── */
     .calendar-container {
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: var(--radius-card);
-      padding: 22px 20px;
-      width: 360px;
+      border-radius: 0;
+      padding: 16px 14px;
+      width: 100%;
       flex-shrink: 0;
     }
 
@@ -336,7 +389,7 @@
     /* ── focus widget ── */
     .focus-widget {
       width:100%; max-width:360px; margin-top:14px;
-      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-card);
+      background:var(--surface); border:1px solid var(--border); border-radius:4px;
       padding:16px 18px;
     }
     .focus-widget-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
@@ -396,7 +449,7 @@
     }
     .modal-card {
       background:var(--surface); border:1px solid var(--border);
-      border-radius:var(--radius-card); padding:24px 22px; width:300px;
+      border-radius:4px; padding:24px 22px; width:300px;
     }
     .modal-date-label { font-size:10px; color:var(--text-3); letter-spacing:0.1em; margin-bottom:3px; }
     .modal-cal-label { font-size:12px; color:var(--text-2); margin-bottom:12px; }
@@ -413,7 +466,7 @@
 
     /* ── password screen ── */
     .password-container {
-      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-card);
+      background:var(--surface); border:1px solid var(--border); border-radius:4px;
       padding:36px 28px; max-width:320px; margin:80px auto; text-align:center;
     }
     .password-title { font-size:13px; color:var(--text-2); margin-bottom:18px; letter-spacing:0.04em; }
@@ -465,7 +518,7 @@
 
     /* ── checklist ── */
     .checklist-card {
-      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-card);
+      background:var(--surface); border:1px solid var(--border); border-radius:4px;
       padding:14px 16px; margin-top:12px; width:100%;
     }
     .checklist-title { font-size:9px; color:var(--text-3); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:8px; }
@@ -506,7 +559,7 @@
 
     /* ── memos modal ── */
     .memos-modal-card {
-      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-card);
+      background:var(--surface); border:1px solid var(--border); border-radius:4px;
       padding:28px 24px; width:460px; max-width:92vw; max-height:80vh; overflow-y:auto;
     }
     .memos-modal-title { font-size:10px; color:var(--text-3); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:16px; }
@@ -525,22 +578,60 @@
     .calendar-item:hover .cal-drag-handle { opacity:1; }
     .cal-drag-handle:active { cursor:grabbing; }
 
-    /* ── sidebar backdrop (mobile) ── */
-    .sidebar-backdrop { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.2); z-index:9; }
-
-    /* ── mobile ── */
-    @media (max-width: 640px) {
-      :root { --sidebar-w: 260px; }
-      .sidebar-backdrop.open { display:block; }
-      .sidebar { z-index:30; padding:20px 16px; }
-      .toggle-button { top:10px; }
-      .main-content { margin-left:0 !important; margin-right:0 !important; padding:14px 10px; }
-      .calendar-container { width:calc(100vw - 20px); max-width:400px; padding:18px 14px; }
-      .cal-drag-handle { opacity:0.4; }
-      #calendar-export-area { border-radius:0 !important; }
-      .postit-col { flex-direction:row; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:8px; gap:10px; }
-      .postit { min-width:140px; }
+    /* ── mobile: phone fills screen ── */
+    @media (max-width: 480px) {
+      .page-wrapper { padding: 0; align-items: stretch; }
+      .phone-shell {
+        width: 100%; min-height: 100vh;
+        border-radius: 0; padding: 0;
+        box-shadow: none;
+      }
+      .phone-screen {
+        border-radius: 0; height: 100vh;
+      }
+      .phone-notch { display: none; }
+      .phone-tab-bar { border-radius: 0; }
+      .bottom-sheet-overlay { border-radius: 0; }
+      .bottom-sheet { border-radius: 24px 24px 0 0; }
     }
+
+    /* ── color picker row ── */
+    .color-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+    }
+    .color-swatch {
+      width: 26px; height: 26px; border-radius: 6px;
+      border: 1px solid var(--border); flex-shrink: 0;
+      cursor: pointer; overflow: hidden;
+    }
+    .color-swatch input[type=color] {
+      width: 200%; height: 200%; margin: -50%; border: none;
+      cursor: pointer; background: none;
+    }
+    .color-row-label {
+      flex: 1; font-size: 11px; color: var(--text-2);
+    }
+    .color-row-input {
+      width: 72px; padding: 4px 6px; font-size: 10px;
+      font-family: 'DM Mono', monospace;
+      border: 1px solid var(--border); border-radius: 4px;
+      background: var(--app-bg); color: var(--text-1);
+      outline: none; text-transform: uppercase;
+    }
+    .color-row-input:focus { border-color: var(--border-hi); }
+
+    /* ── theme presets row ── */
+    .theme-presets { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .theme-preset-btn {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      cursor: pointer; padding: 6px 8px; transition: border-color 0.1s;
+    }
+    .theme-preset-btn:hover { border-color: var(--border-hi); background: var(--hover); }
+    .theme-preset-btn.active { border-color: var(--accent); background: var(--press); }
+    .theme-preset-dots { display: flex; gap: 2px; }
+    .theme-preset-dot { width: 10px; height: 10px; border-radius: 50%; }
+    .theme-preset-name { font-size: 8px; color: var(--text-3); letter-spacing: 0.05em; }
   </style>
 </head>
 <body>
@@ -562,12 +653,19 @@
       else alert('Please try again.');
     };
     if (!isAuthorized) return (
-      <div className="password-container">
-        <p className="password-title">Enter the password.</p>
-        <input type="password" className="input-text" value={inputPwd}
-          onChange={e => setInputPwd(e.target.value)}
-          onKeyDown={e => e.key === 'Enter' && check()} />
-        <button className="add-button" style={{width:'100%',marginTop:10}} onClick={check}>▼</button>
+      <div className="page-wrapper" style={{alignItems:'center',justifyContent:'center',minHeight:'100vh'}}>
+        <div className="phone-shell" style={{minHeight:'auto'}}>
+          <div style={{background:'var(--app-bg)',borderRadius:38,padding:'60px 32px',display:'flex',flexDirection:'column',alignItems:'center',gap:16}}>
+            <div className="phone-notch" style={{marginBottom:20}} />
+            <div className="password-container" style={{margin:0}}>
+              <p className="password-title">Enter the password.</p>
+              <input type="password" className="input-text" value={inputPwd}
+                onChange={e => setInputPwd(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && check()} />
+              <button className="add-button" style={{width:'100%',marginTop:10}} onClick={check}>▼</button>
+            </div>
+          </div>
+        </div>
       </div>
     );
     return children;
@@ -596,20 +694,29 @@
 
   const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
 
-  const THEMES = [
-    { name:'Parchment', bg:'#EDE8DC', dark:'#C8C0B0', light:'#F5F0E6' },
-    { name:'Linen',     bg:'#F0EBE2', dark:'#CFCAB8', light:'#F8F4EC' },
-    { name:'Canvas',    bg:'#E8E3D8', dark:'#C0B8A8', light:'#F0EBE2' },
-    { name:'Ivory',     bg:'#F2EDE4', dark:'#D0C8B8', light:'#FAF6EE' },
-    { name:'Dusk',      bg:'#E4E0D8', dark:'#BCB4A8', light:'#ECEAE4' },
+  const FULL_THEMES = [
+    { name:'Parchment', outerBg:'#D6CFC0', frameBg:'#1A1714', appBg:'#EDE8DC', surfaceBg:'#F5F0E6', borderColor:'#C8C0B0', borderHi:'#9E9080', text1:'#1A1714', text2:'#5C5652', text3:'#A8A098', hover:'#E8E2D4', press:'#DED8CA', accent:'#1A1714' },
+    { name:'Midnight',  outerBg:'#0D0D12', frameBg:'#2A2A3A', appBg:'#1A1A2E', surfaceBg:'#22223A', borderColor:'#3A3A5C', borderHi:'#5A5A8C', text1:'#E8E4F8', text2:'#A8A4C8', text3:'#6A6890', hover:'#2A2A44', press:'#303050', accent:'#8B7CF8' },
+    { name:'Forest',    outerBg:'#C8D4C4', frameBg:'#2C3D2E', appBg:'#E4EEE2', surfaceBg:'#EEF5EC', borderColor:'#B8CCB4', borderHi:'#8EAA8A', text1:'#1E2E1E', text2:'#4A6048', text3:'#8AAA86', hover:'#DCE8D8', press:'#D0DFC8', accent:'#2C3D2E' },
+    { name:'Rose',      outerBg:'#E4C8C8', frameBg:'#3D1F20', appBg:'#F8EDED', surfaceBg:'#FDF4F4', borderColor:'#E8C8C8', borderHi:'#C89898', text1:'#2E1414', text2:'#6A3A3A', text3:'#B08888', hover:'#F4E4E4', press:'#EDD8D8', accent:'#8B3030' },
+    { name:'Ocean',     outerBg:'#B8CCE0', frameBg:'#1A2D3D', appBg:'#E4EEF8', surfaceBg:'#EEF4FC', borderColor:'#B0CCE0', borderHi:'#7AAAC8', text1:'#0E1E2E', text2:'#3A5A78', text3:'#6A96B8', hover:'#D8E8F4', press:'#C8DCF0', accent:'#1A4A70' },
+    { name:'Sand',      outerBg:'#DDD0B8', frameBg:'#3D2E18', appBg:'#F4ECDC', surfaceBg:'#FAF4E8', borderColor:'#D8C8A8', borderHi:'#B8A880', text1:'#2E2010', text2:'#6A5030', text3:'#A8906A', hover:'#EEE4CC', press:'#E4D8BC', accent:'#6A4A20' },
   ];
 
   const applyTheme = (s) => {
-    document.documentElement.style.setProperty('--bg',        s.bgColor  || '#F7F7F7');
-    document.documentElement.style.setProperty('--surface',   s.bgLight  || '#FFFFFF');
-    document.documentElement.style.setProperty('--border',    s.bgDark   || '#E8E8E8');
-    // border-hi: slighly darker — just use bgDark as-is for simplicity
-    document.documentElement.style.setProperty('--border-hi', s.bgDark   || '#C8C8C8');
+    const r = document.documentElement.style;
+    r.setProperty('--outer-bg',  s.outerBg  || '#D6CFC0');
+    r.setProperty('--frame-bg',  s.frameBg  || '#1A1714');
+    r.setProperty('--app-bg',    s.appBg    || '#EDE8DC');
+    r.setProperty('--surface',   s.surfaceBg|| '#F5F0E6');
+    r.setProperty('--border',    s.borderColor||'#C8C0B0');
+    r.setProperty('--border-hi', s.borderHi || '#9E9080');
+    r.setProperty('--text-1',    s.text1    || '#1A1714');
+    r.setProperty('--text-2',    s.text2    || '#5C5652');
+    r.setProperty('--text-3',    s.text3    || '#A8A098');
+    r.setProperty('--hover',     s.hover    || '#E8E2D4');
+    r.setProperty('--press',     s.press    || '#DED8CA');
+    r.setProperty('--accent',    s.accent   || '#1A1714');
   };
 
   const hslToHex = (h,s,l) => {
@@ -639,13 +746,17 @@
   ];
 
   const defaultSettings = {
-    bgColor: '#EDE8DC', bgDark: '#C8C0B0', bgLight: '#F5F0E6',
+    outerBg: '#D6CFC0', frameBg: '#1A1714', appBg: '#EDE8DC',
+    surfaceBg: '#F5F0E6', borderColor: '#C8C0B0', borderHi: '#9E9080',
+    text1: '#1A1714', text2: '#5C5652', text3: '#A8A098',
+    hover: '#E8E2D4', press: '#DED8CA', accent: '#1A1714',
     subtitle: '내면의 성장을 향한 여정',
-    sidebarPosition: 'left', weekStart: 'sun', focusMessages: [],
+    weekStart: 'sun', focusMessages: [],
   };
 
   function App() {
-    const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(() => window.innerWidth <= 640);
+    const [activeTab, setActiveTab] = React.useState('today');
+    const [isSettingsSheetOpen, setIsSettingsSheetOpen] = React.useState(false);
     const [currentDate, setCurrentDate] = React.useState(new Date());
     const [calendars, setCalendars] = React.useState([]);
     const [selectedCalendar, setSelectedCalendar] = React.useState(null);
@@ -749,6 +860,16 @@
       setSettings(s); applyTheme(s);
     };
 
+    const applyFullTheme = (theme) => {
+      const newS = { ...settings,
+        outerBg: theme.outerBg, frameBg: theme.frameBg, appBg: theme.appBg,
+        surfaceBg: theme.surfaceBg, borderColor: theme.borderColor, borderHi: theme.borderHi,
+        text1: theme.text1, text2: theme.text2, text3: theme.text3,
+        hover: theme.hover, press: theme.press, accent: theme.accent,
+      };
+      saveSettings(newS);
+    };
+
     const saveChecklist = (list) => {
       setChecklist(list);
       saveSettings({ ...settings, checklist: list });
@@ -781,7 +902,7 @@
         try {
           const scale=2;
           blob = await domtoimage.toBlob(el, {
-            bgcolor: settings.bgColor,
+            bgcolor: settings.appBg,
             width: el.offsetWidth*scale, height: el.offsetHeight*scale,
             style: { transform:`scale(${scale})`, transformOrigin:'top left', width:el.offsetWidth+'px', height:el.offsetHeight+'px' },
           });
@@ -911,9 +1032,9 @@
     const handlePressEnd = () => clearTimeout(pressTimer.current);
     const handleDayClick = (day) => { if(didLongPress.current) return; toggleDate(day); };
     const navigateMonth = (dir) => setCurrentDate(prev => { const d=new Date(prev); d.setMonth(d.getMonth()+(dir==='prev'?-1:1)); return d; });
-    const toggleSidebar = () => setIsSidebarCollapsed(v=>!v);
+    // toggleSidebar removed; navigation handled via activeTab
 
-    const applyThemePreset = (theme) => saveSettings({ ...settings, bgColor:theme.bg, bgDark:theme.dark, bgLight:theme.light });
+    const applyThemePreset = (theme) => applyFullTheme(theme);
     const saveSubtitle = () => saveSettings({ ...settings, subtitle:editSubtitle });
     const addFocusMessage = () => {
       if (!newFocusMsg.trim()) return;
@@ -1017,14 +1138,418 @@
       );
     };
 
-    /* ── RENDER ── */
-    return (
-      <div className="app-container">
-        <div className={`sidebar-backdrop${!isSidebarCollapsed?' open':''}`} onClick={()=>setIsSidebarCollapsed(true)} />
+    /* ── helper components ── */
+    const ColorRow = ({ label, varKey, value }) => {
+      const [hex, setHex] = React.useState(value||'#000000');
+      React.useEffect(()=>{ setHex(value||'#000000'); }, [value]);
+      const apply = (v) => {
+        setHex(v);
+        const newS = { ...settings, [varKey]: v };
+        saveSettings(newS);
+      };
+      const handleText = (e) => {
+        const v = e.target.value;
+        setHex(v);
+        if (/^#[0-9A-Fa-f]{6}$/.test(v)) apply(v);
+      };
+      return (
+        <div className="color-row">
+          <div className="color-swatch" style={{background: hex}}>
+            <input type="color" value={hex} onChange={e=>apply(e.target.value)} />
+          </div>
+          <span className="color-row-label">{label}</span>
+          <input className="color-row-input" value={hex} onChange={handleText} maxLength={7} />
+        </div>
+      );
+    };
 
-        {/* SIDEBAR */}
-        <div className={`sidebar${isSidebarCollapsed?' collapsed':''} ${settings.sidebarPosition==='right'?'right-side':''}`}>
-          <p className="sidebar-title">List</p>
+    const SettingsContent = () => (
+      <div>
+        <p style={{fontSize:9,color:'var(--text-3)',letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:8}}>Quick Themes</p>
+        <div className="theme-presets">
+          {FULL_THEMES.map(t=>(
+            <button key={t.name} className={`theme-preset-btn${settings.outerBg===t.outerBg&&settings.frameBg===t.frameBg?' active':''}`}
+              onClick={()=>applyFullTheme(t)}>
+              <div className="theme-preset-dots">
+                <div className="theme-preset-dot" style={{background:t.outerBg}} />
+                <div className="theme-preset-dot" style={{background:t.frameBg}} />
+                <div className="theme-preset-dot" style={{background:t.appBg}} />
+              </div>
+              <span className="theme-preset-name">{t.name}</span>
+            </button>
+          ))}
+        </div>
+
+        <p style={{fontSize:9,color:'var(--text-3)',letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:8}}>Colors</p>
+        <ColorRow label="Page Background" varKey="outerBg" value={settings.outerBg} />
+        <ColorRow label="Phone Frame" varKey="frameBg" value={settings.frameBg} />
+        <ColorRow label="Screen Background" varKey="appBg" value={settings.appBg} />
+        <ColorRow label="Surface / Cards" varKey="surfaceBg" value={settings.surfaceBg} />
+        <ColorRow label="Border" varKey="borderColor" value={settings.borderColor} />
+        <ColorRow label="Text Primary" varKey="text1" value={settings.text1} />
+        <ColorRow label="Text Secondary" varKey="text2" value={settings.text2} />
+        <ColorRow label="Text Muted" varKey="text3" value={settings.text3} />
+        <ColorRow label="Accent" varKey="accent" value={settings.accent} />
+
+        <p style={{fontSize:9,color:'var(--text-3)',letterSpacing:'0.12em',textTransform:'uppercase',margin:'14px 0 8px'}}>Calendar Palette</p>
+        <div className="palette-dots">
+          {PALETTE_PRESETS.map(preset=>(
+            <button key={preset.name} className={`palette-dot-btn${selectedPalette===preset.name?' active':''}`}
+              title={preset.label} onClick={()=>applyBulkPalette(preset)}>
+              <div className="palette-dot-circle" style={{background:preset.swatch}} />
+              <span className="palette-dot-label">{preset.label}</span>
+            </button>
+          ))}
+        </div>
+        {lastCalColors && (
+          <button className="sm-button" style={{marginBottom:14,fontSize:10}} onClick={undoBulkPalette}>↩ 되돌리기</button>
+        )}
+
+        <p style={{fontSize:9,color:'var(--text-3)',letterSpacing:'0.12em',textTransform:'uppercase',margin:'14px 0 8px'}}>Subtitle</p>
+        <div className="cal-edit-row" style={{marginBottom:14}}>
+          <input type="text" className="input-text-sm" value={editSubtitle}
+            onChange={e=>setEditSubtitle(e.target.value)} onKeyDown={e=>e.key==='Enter'&&saveSubtitle()} />
+          <button className="sm-button" onClick={saveSubtitle}>저장</button>
+        </div>
+
+        <p style={{fontSize:9,color:'var(--text-3)',letterSpacing:'0.12em',textTransform:'uppercase',margin:'14px 0 8px'}}>Week Start</p>
+        <div style={{display:'flex',gap:6,marginBottom:14}}>
+          {[{val:'sun',label:'SUN'},{val:'mon',label:'MON'}].map(opt=>{
+            const isActive=(settings.weekStart||'sun')===opt.val;
+            return (
+              <button key={opt.val} style={{
+                flex:1,padding:'6px 0',border:`1px solid ${isActive?'var(--border-hi)':'var(--border)'}`,
+                borderRadius:0,cursor:'pointer',
+                background:isActive?'var(--press)':'transparent',
+                color:isActive?'var(--text-1)':'var(--text-3)',fontSize:11,letterSpacing:'0.08em',
+              }} onClick={()=>saveSettings({...settings,weekStart:opt.val})}>
+                {opt.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <p style={{fontSize:9,color:'var(--text-3)',letterSpacing:'0.12em',textTransform:'uppercase',margin:'14px 0 8px'}}>Focus Messages</p>
+        <div>
+          {(settings.focusMessages||[]).map((msg,idx)=>(
+            <div key={idx} className="focus-msg-item">
+              {editingFocusIdx===idx ? (
+                <>
+                  <textarea className="focus-add-textarea" rows={2} value={editingFocusText}
+                    onChange={e=>setEditingFocusText(e.target.value)} autoFocus style={{flex:1}} />
+                  <div style={{display:'flex',flexDirection:'column',gap:3,flexShrink:0}}>
+                    <button className="sm-button" style={{fontSize:10,padding:'2px 6px'}} onClick={()=>saveFocusEdit(idx)}>저장</button>
+                    <button className="sm-button" style={{fontSize:10,padding:'2px 6px'}} onClick={()=>{setEditingFocusIdx(null);setEditingFocusText('');}}>취소</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <span className="focus-msg-text">{msg}</span>
+                  <button style={{background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',padding:2,flexShrink:0,display:'flex',alignItems:'center'}}
+                    onClick={()=>{setEditingFocusIdx(idx);setEditingFocusText(msg);}}><IconPen size={8}/></button>
+                  <button style={{background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',padding:2,flexShrink:0,display:'flex',alignItems:'center'}}
+                    onClick={()=>deleteFocusMessage(idx)}><IconX size={8}/></button>
+                </>
+              )}
+            </div>
+          ))}
+          <div className="focus-add-row">
+            <textarea className="focus-add-textarea" rows={2} placeholder="새 메시지 입력..." value={newFocusMsg} onChange={e=>setNewFocusMsg(e.target.value)} />
+            <button className="sm-button" onClick={addFocusMessage}>+</button>
+          </div>
+        </div>
+
+        <p style={{fontSize:9,color:'var(--text-3)',letterSpacing:'0.12em',textTransform:'uppercase',margin:'14px 0 8px'}}>All Memos</p>
+        <button className="sm-button" style={{width:'100%'}} onClick={()=>setShowMemos(true)}>전체 메모 보기</button>
+      </div>
+    );
+
+    /* ── TAB: TODAY ── */
+    const TodayTab = () => (
+      <div style={{padding:'0 14px'}}>
+        {calendars.length===0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">◯</div>
+            <p className="empty-state-title">아직 캘린더가 없어요</p>
+            <p className="empty-state-desc">캘린더 탭에서 첫 캘린더를 만들어보세요</p>
+          </div>
+        ) : (
+          <>
+            {/* Hero header */}
+            <div style={{paddingTop:16,paddingBottom:12,borderBottom:'1px solid var(--border)',marginBottom:14}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                <button className="nav-button" onClick={()=>navigateMonth('prev')}>←</button>
+                <div style={{textAlign:'center'}}>
+                  <div style={{fontSize:28,fontWeight:700,color:'var(--text-1)',letterSpacing:'-0.02em',lineHeight:1.1,cursor:'pointer'}}
+                    onClick={()=>setCurrentDate(new Date())}>
+                    {currentDate.toLocaleString('en-US',{month:'long'})}
+                    <span style={{fontSize:14,fontWeight:400,color:'var(--text-3)',marginLeft:6}}>{currentDate.getFullYear()}</span>
+                  </div>
+                  <div style={{fontSize:10,color:'var(--text-3)',letterSpacing:'0.05em',marginTop:4,display:'flex',alignItems:'center',justifyContent:'center',gap:5,flexWrap:'wrap'}}>
+                    {currentCalendar.title && (
+                      <>
+                        <div style={{width:6,height:6,borderRadius:'50%',background:currentCalendar.color,flexShrink:0}} />
+                        <span>{currentCalendar.title}</span>
+                        <span>·</span>
+                      </>
+                    )}
+                    <span>{settings.subtitle}</span>
+                  </div>
+                </div>
+                <button className="nav-button" onClick={()=>navigateMonth('next')}>→</button>
+              </div>
+            </div>
+
+            {/* Stats row */}
+            <div className="stats-row">
+              <div className="stat-item">
+                <span className="stat-number">{daysInMonth}</span>
+                <span className="stat-label">days</span>
+              </div>
+              <div className="stat-divider" />
+              <div className="stat-item">
+                <span className="stat-number">{completedThisMonth}</span>
+                <span className="stat-label">done</span>
+              </div>
+              <div className="stat-divider" />
+              <div className="stat-item">
+                <span className="stat-number">{completionRate}%</span>
+                <span className="stat-label">rate</span>
+              </div>
+            </div>
+
+            {/* Calendar grid */}
+            <div id="calendar-export-area" style={{background:'var(--app-bg)',padding:'10px 0'}}>
+              <div className="calendar-grid" style={{marginBottom:4}}>
+                {DOW_LABELS.map(d=><div key={d} className="calendar-day day-header">{d}</div>)}
+              </div>
+              <div className="calendar-grid">
+                {Array(firstDay).fill(null).map((_,i)=><div key={`e-${i}`} className="calendar-day day-empty"/>)}
+                {Array(daysInMonth).fill(null).map((_,i)=>{
+                  const day=i+1;
+                  const dateKey=`${currentDate.getFullYear()}-${currentDate.getMonth()+1}-${day}`;
+                  const isCompleted=currentCalendar.completedDates.includes(dateKey);
+                  const isPinned=!!(pinnedDates[dateKey]);
+                  const isToday=day===todayDay;
+                  return (
+                    <div key={day} className="day-wrapper">
+                      <button className="calendar-day"
+                        onMouseDown={()=>handlePressStart(day)} onMouseUp={handlePressEnd} onMouseLeave={handlePressEnd}
+                        onTouchStart={()=>handlePressStart(day)} onTouchEnd={handlePressEnd}
+                        onClick={()=>handleDayClick(day)}
+                        style={{
+                          backgroundColor:isCompleted?currentCalendar.color:'transparent',
+                          color:isCompleted?getContrastColor(currentCalendar.color):'var(--text-1)',
+                          fontWeight:isToday?700:'normal',
+                          border:!isCompleted&&isToday?'1px solid var(--border-hi)':'',
+                        }}>
+                        {day}
+                      </button>
+                      {isPinned && <div className="pin-dot" style={{backgroundColor:currentCalendar.color}} />}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {todayDay > 0 && (
+              <button className="today-memo-btn" onClick={()=>openPinModal(todayObj.getDate())}>
+                + 오늘 ({todayDay}일) 메모 추가
+              </button>
+            )}
+
+            {/* Focus widget */}
+            {focusMessage && (
+              <div className="focus-widget">
+                <div className="focus-widget-header">
+                  <p className="focus-widget-label">focus</p>
+                  <button className="focus-refresh-btn" onClick={refreshFocusMessage} title="새 메시지">↺</button>
+                </div>
+                <p className="focus-widget-text">{focusMessage}</p>
+              </div>
+            )}
+
+            {/* Checklist */}
+            <div className="checklist-card">
+              <p className="checklist-title">checklist</p>
+              {checklist.length>0 && checklist.map(item=>(
+                <div key={item.id} className="checklist-item"
+                  style={item.starred?{backgroundColor:'var(--hover)',borderRadius:0,margin:'2px -4px',padding:'4px 4px'}:{}}>
+                  <button className={`checklist-star${item.starred?' starred':''}`}
+                    style={item.starred?{color:currentCalendar.color,opacity:1}:{}}
+                    onClick={()=>starCheckItem(item.id)}>{item.starred?'★':'☆'}</button>
+                  <button className={`checklist-check${item.done?' done':''}`}
+                    style={item.done?{background:currentCalendar.color,borderColor:currentCalendar.color}:{}}
+                    onClick={()=>toggleCheckItem(item.id)} />
+                  {editingCheckId===item.id ? (
+                    <>
+                      <input className="checklist-input" value={editingCheckText}
+                        onChange={e=>setEditingCheckText(e.target.value)}
+                        onKeyDown={e=>{if(e.key==='Enter')saveCheckEdit(item.id);if(e.key==='Escape')cancelCheckEdit();}}
+                        autoFocus style={{flex:1}} />
+                      <button className="checklist-del" onClick={()=>saveCheckEdit(item.id)} style={{opacity:1,fontSize:11}}>✓</button>
+                      <button className="checklist-del" onClick={cancelCheckEdit} style={{opacity:1}}>×</button>
+                    </>
+                  ) : (
+                    <>
+                      <span className={`checklist-text${item.done?' done':''}`}>{item.text}</span>
+                      <button className="checklist-del" onClick={()=>editCheckItem(item.id,item.text)} title="편집" style={{fontSize:10}}>✎</button>
+                      <button className="checklist-del" onClick={()=>deleteCheckItem(item.id)}>×</button>
+                    </>
+                  )}
+                </div>
+              ))}
+              <div className="checklist-add-row">
+                <input className="checklist-input" value={newCheckItem}
+                  onChange={e=>setNewCheckItem(e.target.value)}
+                  onKeyDown={e=>e.key==='Enter'&&addCheckItem()} placeholder="새 항목 추가" />
+                <button className="checklist-add-btn" onClick={addCheckItem}>+</button>
+              </div>
+            </div>
+
+            {/* Post-it memos */}
+            {currentMonthPins.length>0 && (
+              <div style={{marginTop:14}}>
+                <p style={{fontSize:9,color:'var(--text-3)',letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:8}}>Memos</p>
+                <div style={{display:'flex',gap:10,overflowX:'auto',paddingBottom:8,marginLeft:-14,marginRight:-14,paddingLeft:14,paddingRight:14}}>
+                  {currentMonthPins.map(([dateKey,pinData])=>{
+                    const pin=pinData;
+                    const memo=typeof pin==='string'?pin:(pin?.memo||'');
+                    const img=typeof pin==='string'?null:(pin?.image||null);
+                    const dayNum=dateKey.split('-')[2];
+                    return (
+                      <div key={dateKey} className="postit"
+                        style={{borderTop:`2px solid ${currentCalendar.color}`,flexShrink:0,minWidth:140}}>
+                        <div className="postit-day-bg">{dayNum}</div>
+                        <p className="postit-date">{formatDateKey(dateKey)}</p>
+                        <p className="postit-memo">{memo}</p>
+                        {img ? <img src={img} alt="" style={{width:'100%',borderRadius:0,marginTop:6,display:'block'}} /> : null}
+                        <div className="postit-actions">
+                          <button className="postit-btn" onClick={()=>{
+                            const ex=currentCalendar.pinnedDates?.[dateKey]||{};
+                            const m=typeof ex==='string'?ex:(ex.memo||'');
+                            const im=typeof ex==='string'?null:(ex.image||null);
+                            setPinModal({open:true,dateKey,memo:m,image:im,imgEdit:defaultImgEdit});
+                          }} title="편집"><IconPen size={10}/></button>
+                          <button className="postit-btn del" onClick={()=>removePin(dateKey)} title="삭제"><IconX size={8}/></button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Export */}
+            <div style={{display:'flex',justifyContent:'center',margin:'16px 0 4px'}}>
+              <button className={`export-btn${exportStatus==='copied'?' done':''}`} onClick={exportCalendar}
+                disabled={exportStatus==='loading'||exportStatus==='download'}>
+                {exportStatus==='loading'&&'…'}
+                {exportStatus==='copied'&&'✓ 복사됨'}
+                {(exportStatus==='idle'||exportStatus==='download')&&'export'}
+              </button>
+              {exportStatus==='download'&&exportBlobUrl&&(
+                <a href={exportBlobUrl}
+                  download={`calendar-${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}.png`}
+                  className="export-btn done" style={{textDecoration:'none',marginLeft:8}}
+                  onClick={()=>{setTimeout(()=>{setExportStatus('idle');URL.revokeObjectURL(exportBlobUrl);setExportBlobUrl(null);},500);}}>
+                  ↓ 다운로드</a>
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    );
+
+    /* ── TAB: CALENDAR ── */
+    const CalendarTab = () => {
+      const activeCals = calendars.length>4
+        ? calendars.filter(c=>(overviewPicks??calendars.slice(0,4).map(c=>c.id)).includes(c.id))
+        : calendars;
+      return (
+        <div style={{padding:'0 14px'}}>
+          {/* Overview grid */}
+          <div style={{paddingTop:14,paddingBottom:12,borderBottom:'1px solid var(--border)',marginBottom:14}}>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+              <button className="nav-button" onClick={()=>navigateMonth('prev')}>←</button>
+              <span style={{fontSize:14,fontWeight:600,color:'var(--text-1)',cursor:'pointer'}}
+                onClick={()=>setCurrentDate(new Date())}>
+                {currentDate.toLocaleString('en-US',{month:'long',year:'numeric'})}
+              </span>
+              <button className="nav-button" onClick={()=>navigateMonth('next')}>→</button>
+            </div>
+
+            {calendars.length>4 && (
+              <div style={{marginBottom:10}}>
+                <p style={{fontSize:9,color:'var(--text-3)',letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:5}}>표시할 캘린더 (최대 4개)</p>
+                <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
+                  {calendars.map(cal=>{
+                    const curPicks=overviewPicks??calendars.slice(0,4).map(c=>c.id);
+                    const isPicked=curPicks.includes(cal.id);
+                    return (
+                      <button key={cal.id} onClick={()=>{
+                        const cur=overviewPicks??calendars.slice(0,4).map(c=>c.id);
+                        if(isPicked) setOverviewPicks(cur.filter(id=>id!==cal.id));
+                        else if(cur.length<4) setOverviewPicks([...cur,cal.id]);
+                      }} style={{
+                        display:'flex',alignItems:'center',gap:4,
+                        padding:'3px 8px',border:`1px solid ${isPicked?'var(--border-hi)':'var(--border)'}`,
+                        borderRadius:0,cursor:'pointer',
+                        background:isPicked?'var(--press)':'transparent',
+                        fontSize:10,color:isPicked?'var(--text-1)':'var(--text-3)',maxWidth:120,overflow:'hidden',
+                      }}>
+                        <div style={{width:5,height:5,borderRadius:'50%',background:cal.color,flexShrink:0}} />
+                        <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{cal.title}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            <div className="calendar-grid" style={{marginBottom:4}}>
+              {DOW_LABELS.map(d=><div key={d} className="calendar-day day-header">{d}</div>)}
+            </div>
+            <div className="calendar-grid">
+              {Array(firstDay).fill(null).map((_,i)=><div key={`e-${i}`} className="calendar-day day-empty"/>)}
+              {Array(daysInMonth).fill(null).map((_,i)=>{
+                const day=i+1;
+                const dateKey=`${currentDate.getFullYear()}-${currentDate.getMonth()+1}-${day}`;
+                const doneCals=activeCals.filter(c=>c.completedDates.includes(dateKey));
+                const colors=doneCals.map(c=>c.color);
+                const isToday=day===todayDay;
+                return (
+                  <div key={day} className="day-wrapper">
+                    <button className="calendar-day" disabled style={{
+                      fontWeight:isToday?700:'normal',
+                      border:isToday?'1px solid var(--border-hi)':'',
+                      position:'relative',
+                    }}>
+                      {day}
+                      {colors.length>0 && (
+                        <div style={{position:'absolute',bottom:2,right:2,borderRadius:'50%',overflow:'hidden',lineHeight:0}}>
+                          <CloverDot colors={colors} />
+                        </div>
+                      )}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            {activeCals.length>0 && (
+              <div style={{display:'flex',flexWrap:'wrap',gap:'4px 12px',marginTop:10}}>
+                {activeCals.map(cal=>(
+                  <div key={cal.id} style={{display:'flex',alignItems:'center',gap:4}}>
+                    <div style={{width:6,height:6,borderRadius:'50%',background:cal.color}} />
+                    <span style={{fontSize:9,color:'var(--text-2)'}}>{cal.title}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Calendar list */}
+          <p style={{fontSize:9,color:'var(--text-3)',letterSpacing:'0.12em',textTransform:'uppercase',marginBottom:8}}>Calendars</p>
 
           {selectedCalendar && selectedCalendar !== 'all' && (() => {
             const selCal = calendars.find(c => c.id === selectedCalendar);
@@ -1035,7 +1560,7 @@
             }).length;
             const rate = daysInMonth > 0 ? Math.round((thisDone / daysInMonth) * 100) : 0;
             return (
-              <div style={{marginBottom:14,paddingBottom:14,borderBottom:`1px solid var(--border)`}}>
+              <div style={{marginBottom:12,padding:'10px 12px',background:'var(--surface)',border:'1px solid var(--border)'}}>
                 <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:5}}>
                   <div style={{width:9,height:9,borderRadius:'50%',background:selCal.color,flexShrink:0}} />
                   <span style={{fontSize:12,fontWeight:600,color:'var(--text-1)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>{selCal.title}</span>
@@ -1081,7 +1606,7 @@
               return (
                 <div key={cal.id} data-cal-id={cal.id}
                   className={`calendar-item${selectedCalendar===cal.id?' selected':''} ${dragOverId===cal.id?'drag-over':''}`}
-                  onClick={()=>setSelectedCalendar(cal.id)}>
+                  onClick={()=>{ setSelectedCalendar(cal.id); setActiveTab('today'); }}>
                   <span className="cal-drag-handle" title="드래그하여 순서 변경" style={{touchAction:'none'}}
                     onPointerDown={e=>handleDragHandlePointerDown(e,cal.id)}
                     onPointerMove={handleDragHandlePointerMove}
@@ -1100,7 +1625,7 @@
             })}
           </div>
 
-          <div className="new-calendar-form">
+          <div className="new-calendar-form" style={{marginTop:14}}>
             <input type="text" className="input-text" placeholder="Title here" value={newTitle}
               onChange={e=>setNewTitle(e.target.value)} onKeyDown={e=>e.key==='Enter'&&addCalendar()} />
             <div className="color-picker-container">
@@ -1108,535 +1633,228 @@
               <button className="add-button" onClick={addCalendar}>Add</button>
             </div>
           </div>
+        </div>
+      );
+    };
 
-          <div style={{marginTop:14,marginBottom:2}}>
-            <button className="sm-button" style={{width:'100%'}} onClick={()=>setShowMemos(true)}>전체 메모</button>
-          </div>
+    /* ── TAB: SETTINGS (phone settings tab) ── */
+    const SettingsTab = () => (
+      <div style={{padding:'14px 14px'}}>
+        <p style={{fontSize:13,fontWeight:600,color:'var(--text-1)',marginBottom:16}}>Settings</p>
+        <SettingsContent />
+      </div>
+    );
 
-          <div className="settings-panel">
-            <button className="settings-toggle" onClick={()=>setIsSettingsOpen(v=>!v)}>
-              <span>Settings</span>
-              <span style={{fontSize:10}}>{isSettingsOpen?'▲':'▼'}</span>
-            </button>
-            {isSettingsOpen && (
-              <div className="settings-body">
+    /* ── RENDER ── */
+    return (
+      <div className="page-wrapper">
+        {/* ── PHONE SHELL ── */}
+        <div className="phone-shell">
+          <div className="phone-screen">
+            <div className="phone-notch" />
 
-                <p className="settings-section-label">calendar palette</p>
-                <div className="palette-dots">
-                  {PALETTE_PRESETS.map(preset=>(
-                    <button key={preset.name} className={`palette-dot-btn${selectedPalette===preset.name?' active':''}`}
-                      title={preset.label} onClick={()=>applyBulkPalette(preset)}>
-                      <div className="palette-dot-circle" style={{background:preset.swatch}} />
-                      <span className="palette-dot-label">{preset.label}</span>
-                    </button>
-                  ))}
+            {/* Phone content area */}
+            <div className="phone-content">
+              {activeTab==='today' && <TodayTab />}
+              {activeTab==='calendar' && <CalendarTab />}
+              {activeTab==='settings' && <SettingsTab />}
+            </div>
+
+            {/* Settings bottom sheet */}
+            {isSettingsSheetOpen && (
+              <div className="bottom-sheet-overlay" onClick={()=>setIsSettingsSheetOpen(false)}>
+                <div className="bottom-sheet" onClick={e=>e.stopPropagation()}>
+                  <div className="sheet-handle" />
+                  <p style={{fontSize:13,fontWeight:600,color:'var(--text-1)',marginBottom:14}}>Appearance</p>
+                  <SettingsContent />
                 </div>
-                {lastCalColors && (
-                  <button className="sm-button" style={{marginBottom:14,fontSize:10}} onClick={undoBulkPalette}>↩ 되돌리기</button>
-                )}
-
-                <p className="settings-section-label">background</p>
-                <div className="theme-dots">
-                  {THEMES.map(theme=>(
-                    <button key={theme.name}
-                      className={`theme-dot${settings.bgColor===theme.bg?' active':''}`}
-                      title={theme.name} style={{background:theme.bg}}
-                      onClick={()=>applyThemePreset(theme)} />
-                  ))}
-                </div>
-
-                <p className="settings-section-label">subtitle</p>
-                <div className="cal-edit-row" style={{marginBottom:14}}>
-                  <input type="text" className="input-text-sm" value={editSubtitle}
-                    onChange={e=>setEditSubtitle(e.target.value)} onKeyDown={e=>e.key==='Enter'&&saveSubtitle()} />
-                  <button className="sm-button" onClick={saveSubtitle}>저장</button>
-                </div>
-
-                <p className="settings-section-label">sidebar</p>
-                <div style={{display:'flex',gap:6,marginBottom:10}}>
-                  {['left','right'].map(pos=>{
-                    const isActive=(settings.sidebarPosition||'left')===pos;
-                    return (
-                      <button key={pos} style={{
-                        flex:1,padding:'6px 0',border:`1px solid ${isActive?'var(--border-hi)':'var(--border)'}`,
-                        borderRadius:0,cursor:'pointer',
-                        background:isActive?'var(--press)':'transparent',
-                        color:isActive?'var(--text-1)':'var(--text-3)',fontSize:11,letterSpacing:'0.08em',
-                      }} onClick={()=>saveSettings({...settings,sidebarPosition:pos})}>
-                        {pos==='left'?'← 왼쪽':'오른쪽 →'}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <p className="settings-section-label">week start</p>
-                <div style={{display:'flex',gap:6,marginBottom:14}}>
-                  {[{val:'sun',label:'SUN'},{val:'mon',label:'MON'}].map(opt=>{
-                    const isActive=(settings.weekStart||'sun')===opt.val;
-                    return (
-                      <button key={opt.val} style={{
-                        flex:1,padding:'6px 0',border:`1px solid ${isActive?'var(--border-hi)':'var(--border)'}`,
-                        borderRadius:0,cursor:'pointer',
-                        background:isActive?'var(--press)':'transparent',
-                        color:isActive?'var(--text-1)':'var(--text-3)',fontSize:11,letterSpacing:'0.08em',
-                      }} onClick={()=>saveSettings({...settings,weekStart:opt.val})}>
-                        {opt.label}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <p className="settings-section-label">focus</p>
-                <div>
-                  {(settings.focusMessages||[]).map((msg,idx)=>(
-                    <div key={idx} className="focus-msg-item">
-                      {editingFocusIdx===idx ? (
-                        <>
-                          <textarea className="focus-add-textarea" rows={2} value={editingFocusText}
-                            onChange={e=>setEditingFocusText(e.target.value)} autoFocus style={{flex:1}} />
-                          <div style={{display:'flex',flexDirection:'column',gap:3,flexShrink:0}}>
-                            <button className="sm-button" style={{fontSize:10,padding:'2px 6px'}} onClick={()=>saveFocusEdit(idx)}>저장</button>
-                            <button className="sm-button" style={{fontSize:10,padding:'2px 6px'}} onClick={()=>{setEditingFocusIdx(null);setEditingFocusText('');}}>취소</button>
-                          </div>
-                        </>
-                      ) : (
-                        <>
-                          <span className="focus-msg-text">{msg}</span>
-                          <button style={{background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',padding:2,flexShrink:0,display:'flex',alignItems:'center'}}
-                            onClick={()=>{setEditingFocusIdx(idx);setEditingFocusText(msg);}}><IconPen size={8}/></button>
-                          <button style={{background:'none',border:'none',cursor:'pointer',color:'var(--text-3)',padding:2,flexShrink:0,display:'flex',alignItems:'center'}}
-                            onClick={()=>deleteFocusMessage(idx)}><IconX size={8}/></button>
-                        </>
-                      )}
-                    </div>
-                  ))}
-                  <div className="focus-add-row">
-                    <textarea className="focus-add-textarea" rows={2} placeholder="새 메시지 입력..." value={newFocusMsg} onChange={e=>setNewFocusMsg(e.target.value)} />
-                    <button className="sm-button" onClick={addFocusMessage}>+</button>
-                  </div>
-                </div>
-
               </div>
             )}
-          </div>
-        </div>
 
-        {/* TOGGLE */}
-        <button className={`toggle-button${isSidebarCollapsed?' collapsed':''} ${settings.sidebarPosition==='right'?'right-side':''}`} onClick={toggleSidebar}>
-          {settings.sidebarPosition==='right' ? (isSidebarCollapsed?'←':'→') : (isSidebarCollapsed?'→':'←')}
-        </button>
+            {/* PIN MODAL */}
+            {pinModal.open && (
+              <div className="bottom-sheet-overlay" onClick={()=>setPinModal({open:false,dateKey:'',memo:'',image:null})}>
+                <div className="bottom-sheet" onClick={e=>e.stopPropagation()}>
+                  <div className="sheet-handle" />
+                  <p style={{fontSize:10,color:'var(--text-3)',letterSpacing:'0.1em',marginBottom:3}}>{formatDateKey(pinModal.dateKey)}</p>
+                  <p style={{fontSize:12,color:'var(--text-2)',marginBottom:10}}>{currentCalendar.title||''}</p>
+                  <p style={{fontSize:10,color:'var(--text-3)',marginBottom:10}}>메모를 비우고 저장하면 핀이 제거돼요.</p>
+                  <textarea className="modal-textarea" value={pinModal.memo}
+                    onChange={e=>setPinModal(prev=>({...prev,memo:e.target.value}))}
+                    placeholder="이 날짜에 대해 남겨두고 싶은 말" autoFocus />
 
-        {/* MAIN */}
-        <div className={`main-content${isSidebarCollapsed?' expanded':''} ${settings.sidebarPosition==='right'?'right-sidebar':''}`}>
-
-        {/* OVERVIEW (모아보기) */}
-        {calendars.length===0 ? (
-          <div className="empty-state">
-            <div className="empty-state-icon">◯</div>
-            <p className="empty-state-title">아직 캘린더가 없어요</p>
-            <p className="empty-state-desc">사이드바에서 첫 캘린더를<br/>만들어보세요</p>
-          </div>
-        ) : selectedCalendar==='all' ? (() => {
-          const activeCals = calendars.length>4
-            ? calendars.filter(c=>(overviewPicks??calendars.slice(0,4).map(c=>c.id)).includes(c.id))
-            : calendars;
-          return (
-            <div style={{
-              background:settings.bgColor||'#EDE8DC',
-              border:'1px solid var(--border)',borderRadius:0,
-              padding:24,width:420,maxWidth:420,boxSizing:'border-box',flexShrink:0,overflow:'hidden',
-            }}>
-              <div className="calendar-container" style={{width:'100%',maxWidth:'none',boxSizing:'border-box'}}>
-                <div className="month-navigator">
-                  <button className="nav-button" onClick={()=>navigateMonth('prev')}>←</button>
-                  <span className="month-title" onClick={()=>setCurrentDate(new Date())} title="오늘로 이동" style={{cursor:'pointer'}}>
-                    {currentDate.toLocaleString('en-US',{month:'long',year:'numeric'})}
-                  </span>
-                  <button className="nav-button" onClick={()=>navigateMonth('next')}>→</button>
-                </div>
-                <p className="calendar-subtitle">모아보기</p>
-
-                {calendars.length>4 && (
-                  <div style={{marginBottom:10}}>
-                    <p className="settings-section-label" style={{marginBottom:5}}>표시할 캘린더 (최대 4개)</p>
-                    <div style={{display:'flex',flexWrap:'wrap',gap:4}}>
-                      {calendars.map(cal=>{
-                        const curPicks=overviewPicks??calendars.slice(0,4).map(c=>c.id);
-                        const isPicked=curPicks.includes(cal.id);
-                        return (
-                          <button key={cal.id} onClick={()=>{
-                            const cur=overviewPicks??calendars.slice(0,4).map(c=>c.id);
-                            if(isPicked) setOverviewPicks(cur.filter(id=>id!==cal.id));
-                            else if(cur.length<4) setOverviewPicks([...cur,cal.id]);
-                          }} style={{
-                            display:'flex',alignItems:'center',gap:4,
-                            padding:'3px 8px',border:`1px solid ${isPicked?'var(--border-hi)':'var(--border)'}`,
-                            borderRadius:0,cursor:'pointer',
-                            background:isPicked?'var(--press)':'transparent',
-                            fontSize:10,color:isPicked?'var(--text-1)':'var(--text-3)',maxWidth:120,overflow:'hidden',
-                          }}>
-                            <div style={{width:5,height:5,borderRadius:'50%',background:cal.color,flexShrink:0}} />
-                            <span style={{overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{cal.title}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                <div className="calendar-grid" style={{marginBottom:6}}>
-                  {DOW_LABELS.map(d=><div key={d} className="calendar-day day-header">{d}</div>)}
-                </div>
-                <div className="calendar-grid">
-                  {Array(firstDay).fill(null).map((_,i)=><div key={`e-${i}`} className="calendar-day day-empty"/>)}
-                  {Array(daysInMonth).fill(null).map((_,i)=>{
-                    const day=i+1;
-                    const dateKey=`${currentDate.getFullYear()}-${currentDate.getMonth()+1}-${day}`;
-                    const doneCals=activeCals.filter(c=>c.completedDates.includes(dateKey));
-                    const colors=doneCals.map(c=>c.color);
-                    const isToday=day===todayDay;
-                    return (
-                      <div key={day} className="day-wrapper">
-                        <button className="calendar-day" disabled style={{
-                          fontWeight:isToday?700:'normal',
-                          border:isToday?'1px solid var(--border-hi)':'',
-                          position:'relative',
-                        }}>
-                          {day}
-                          {colors.length>0 && (
-                            <div style={{position:'absolute',bottom:2,right:2,borderRadius:'50%',overflow:'hidden',lineHeight:0}}>
-                              <CloverDot colors={colors} />
-                            </div>
-                          )}
-                        </button>
+                  <div style={{marginBottom:12}}>
+                    {pinModal.image ? (() => {
+                      const ie=pinModal.imgEdit||defaultImgEdit;
+                      const btnSt=(active)=>({
+                        padding:'4px 8px',border:`1px solid ${active?'var(--border-hi)':'var(--border)'}`,
+                        borderRadius:0,cursor:'pointer',
+                        background:active?'var(--press)':'transparent',
+                        color:active?'var(--text-1)':'var(--text-2)',fontSize:12,
+                      });
+                      return (
+                        <div>
+                          <div style={{
+                            position:'relative',width:'100%',height:150,overflow:'hidden',borderRadius:0,
+                            marginBottom:7,display:'flex',alignItems:'center',justifyContent:'center',
+                            cursor:'grab',userSelect:'none',border:'1px solid var(--border)',
+                          }}
+                            onPointerDown={e=>{
+                              e.currentTarget.setPointerCapture(e.pointerId);
+                              imgDragRef.current={active:true,startX:e.clientX,startY:e.clientY,
+                                baseOffX:(pinModal.imgEdit||defaultImgEdit).offsetX,baseOffY:(pinModal.imgEdit||defaultImgEdit).offsetY};
+                              e.currentTarget.style.cursor='grabbing';
+                            }}
+                            onPointerMove={e=>{
+                              if(!imgDragRef.current.active) return;
+                              const dx=e.clientX-imgDragRef.current.startX,dy=e.clientY-imgDragRef.current.startY;
+                              setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),offsetX:imgDragRef.current.baseOffX+dx,offsetY:imgDragRef.current.baseOffY+dy}}));
+                            }}
+                            onPointerUp={e=>{imgDragRef.current.active=false;e.currentTarget.releasePointerCapture(e.pointerId);e.currentTarget.style.cursor='grab';}}>
+                            <img src={pinModal.image} alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',filter:'blur(12px)',transform:'scale(1.15)',pointerEvents:'none',opacity:0.8}} />
+                            <img src={pinModal.image} alt="" style={{maxWidth:'100%',maxHeight:'100%',display:'block',position:'relative',zIndex:1,
+                              transform:`translate(${ie.offsetX}px,${ie.offsetY}px) rotate(${ie.rotate}deg) scaleX(${ie.flipH?-1:1}) scaleY(${ie.flipV?-1:1}) scale(${ie.scale})`,
+                              transformOrigin:'center',pointerEvents:'none'}} />
+                            <button onPointerDown={e=>e.stopPropagation()}
+                              onClick={e=>{e.stopPropagation();setPinModal(prev=>({...prev,image:null,imgEdit:defaultImgEdit}));}}
+                              style={{position:'absolute',top:5,right:5,zIndex:2,background:'rgba(0,0,0,0.4)',border:'none',borderRadius:'50%',
+                                width:20,height:20,cursor:'pointer',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',padding:0}}>
+                              <IconX size={8}/>
+                            </button>
+                            {(ie.offsetX!==0||ie.offsetY!==0)&&(
+                              <button onPointerDown={e=>e.stopPropagation()}
+                                onClick={e=>{e.stopPropagation();setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),offsetX:0,offsetY:0}}));}}
+                                style={{position:'absolute',bottom:5,right:5,zIndex:2,background:'rgba(0,0,0,0.3)',border:'none',borderRadius:0,
+                                  padding:'2px 6px',cursor:'pointer',color:'#fff',fontSize:9}}>중앙 초기화</button>
+                            )}
+                          </div>
+                          <div style={{display:'flex',flexWrap:'wrap',gap:5,alignItems:'center'}}>
+                            <button style={btnSt(false)} title="90° 왼쪽" onClick={()=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),rotate:((prev.imgEdit||defaultImgEdit).rotate-90+360)%360}}))}>↺</button>
+                            <button style={btnSt(false)} title="90° 오른쪽" onClick={()=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),rotate:((prev.imgEdit||defaultImgEdit).rotate+90)%360}}))}>↻</button>
+                            <button style={btnSt(ie.flipH)} title="좌우 반전" onClick={()=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),flipH:!(prev.imgEdit||defaultImgEdit).flipH}}))}>↔</button>
+                            <button style={btnSt(ie.flipV)} title="상하 반전" onClick={()=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),flipV:!(prev.imgEdit||defaultImgEdit).flipV}}))}>↕</button>
+                            <input type="range" min="0.4" max="2.0" step="0.05" value={ie.scale}
+                              onChange={e=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),scale:parseFloat(e.target.value)}}))}
+                              style={{flex:1,minWidth:60,cursor:'pointer'}} title={`${Math.round(ie.scale*100)}%`} />
+                            <span style={{fontSize:10,color:'var(--text-3)',minWidth:28}}>{Math.round(ie.scale*100)}%</span>
+                          </div>
+                        </div>
+                      );
+                    })() : (
+                      <div style={{display:'flex',alignItems:'center',gap:8}}>
+                        <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer'}}>
+                          <input type="file" accept="image/*" style={{display:'none'}} onChange={handleImageSelect} />
+                          <span style={{padding:'5px 12px',border:'1px solid var(--border)',borderRadius:0,fontSize:11,color:'var(--text-2)',cursor:'pointer'}}>+ 사진 첨부</span>
+                        </label>
+                        <span style={{fontSize:10,color:'var(--text-3)'}}>또는 Ctrl+V 붙여넣기</span>
                       </div>
-                    );
-                  })}
-                </div>
-                <div style={{display:'flex',flexWrap:'wrap',gap:'4px 12px',marginTop:12}}>
-                  {activeCals.map(cal=>(
-                    <div key={cal.id} style={{display:'flex',alignItems:'center',gap:4}}>
-                      <div style={{width:6,height:6,borderRadius:'50%',background:cal.color}} />
-                      <span style={{fontSize:9,color:'var(--text-2)'}}>{cal.title}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          );
-        })() : (
-          <React.Fragment>
-          {/* EXPORT AREA */}
-          <div id="calendar-export-area" style={{
-            background:settings.bgColor||'#EDE8DC',
-            border:'1px solid var(--border)',borderRadius:0,
-            padding:24,display:'flex',gap:20,alignItems:'flex-start',
-          }}>
-            {/* LEFT: calendar + focus + checklist */}
-            <div style={{flex:'0 0 360px',width:360}}>
-              <div className="calendar-container">
-                <div className="hero-header">
-                  <div className="hero-nav">
-                    <button className="nav-button" onClick={()=>navigateMonth('prev')}>←</button>
-                    <button className="nav-button" onClick={()=>navigateMonth('next')}>→</button>
-                  </div>
-                  <div className="hero-title" onClick={()=>setCurrentDate(new Date())} title="오늘로 이동">
-                    {currentDate.toLocaleString('en-US',{month:'long'})}
-                    <span className="hero-year">{currentDate.getFullYear()}</span>
-                  </div>
-                  <div className="hero-subtitle">
-                    {currentCalendar.title && (<><div className="hero-cal-dot" style={{background:currentCalendar.color}} /><span>{currentCalendar.title}</span><span>·</span></>)}
-                    <span>{settings.subtitle}</span>
-                  </div>
-                </div>
-                <div className="stats-row">
-                  <div className="stat-item">
-                    <span className="stat-number">{daysInMonth}</span>
-                    <span className="stat-label">days</span>
-                  </div>
-                  <div className="stat-divider" />
-                  <div className="stat-item">
-                    <span className="stat-number">{completedThisMonth}</span>
-                    <span className="stat-label">done</span>
-                  </div>
-                  <div className="stat-divider" />
-                  <div className="stat-item">
-                    <span className="stat-number">{completionRate}%</span>
-                    <span className="stat-label">rate</span>
-                  </div>
-                </div>
-                <div className="calendar-grid" style={{marginBottom:6}}>
-                  {DOW_LABELS.map(d=><div key={d} className="calendar-day day-header">{d}</div>)}
-                </div>
-                <div className="calendar-grid">
-                  {Array(firstDay).fill(null).map((_,i)=><div key={`empty-${i}`} className="calendar-day day-empty"/>)}
-                  {Array(daysInMonth).fill(null).map((_,i)=>{
-                    const day=i+1;
-                    const dateKey=`${currentDate.getFullYear()}-${currentDate.getMonth()+1}-${day}`;
-                    const isCompleted=currentCalendar.completedDates.includes(dateKey);
-                    const isPinned=!!(pinnedDates[dateKey]);
-                    const isToday=day===todayDay;
-                    return (
-                      <div key={day} className="day-wrapper">
-                        <button className="calendar-day"
-                          onMouseDown={()=>handlePressStart(day)} onMouseUp={handlePressEnd} onMouseLeave={handlePressEnd}
-                          onTouchStart={()=>handlePressStart(day)} onTouchEnd={handlePressEnd}
-                          onClick={()=>handleDayClick(day)}
-                          style={{
-                            backgroundColor:isCompleted?currentCalendar.color:'transparent',
-                            color:isCompleted?getContrastColor(currentCalendar.color):'var(--text-1)',
-                            fontWeight:isToday?700:'normal',
-                            border:!isCompleted&&isToday?'1px solid var(--border-hi)':'',
-                          }}>
-                          {day}
-                        </button>
-                        {isPinned && <div className="pin-dot" style={{backgroundColor:currentCalendar.color}} />}
-                      </div>
-                    );
-                  })}
-                </div>
-                {todayDay > 0 && (
-                  <button className="today-memo-btn" onClick={()=>openPinModal(todayObj.getDate())}>
-                    + 오늘 ({todayDay}일) 메모 추가
-                  </button>
-                )}
-              </div>
-
-              {focusMessage && (
-                <div className="focus-widget">
-                  <div className="focus-widget-header">
-                    <p className="focus-widget-label">focus</p>
-                    <button className="focus-refresh-btn" onClick={refreshFocusMessage} title="새 메시지">↺</button>
-                  </div>
-                  <p className="focus-widget-text">{focusMessage}</p>
-                </div>
-              )}
-
-              <div className="checklist-card">
-                <p className="checklist-title">checklist</p>
-                {checklist.length>0 && checklist.map(item=>(
-                  <div key={item.id} className="checklist-item"
-                    style={item.starred?{backgroundColor:'var(--hover)',borderRadius:0,margin:'2px -4px',padding:'4px 4px'}:{}}>
-                    <button className={`checklist-star${item.starred?' starred':''}`}
-                      style={item.starred?{color:currentCalendar.color,opacity:1}:{}}
-                      onClick={()=>starCheckItem(item.id)}>{item.starred?'★':'☆'}</button>
-                    <button className={`checklist-check${item.done?' done':''}`}
-                      style={item.done?{background:currentCalendar.color,borderColor:currentCalendar.color}:{}}
-                      onClick={()=>toggleCheckItem(item.id)} />
-                    {editingCheckId===item.id ? (
-                      <>
-                        <input className="checklist-input" value={editingCheckText}
-                          onChange={e=>setEditingCheckText(e.target.value)}
-                          onKeyDown={e=>{if(e.key==='Enter')saveCheckEdit(item.id);if(e.key==='Escape')cancelCheckEdit();}}
-                          autoFocus style={{flex:1}} />
-                        <button className="checklist-del" onClick={()=>saveCheckEdit(item.id)} style={{opacity:1,fontSize:11}}>✓</button>
-                        <button className="checklist-del" onClick={cancelCheckEdit} style={{opacity:1}}>×</button>
-                      </>
-                    ) : (
-                      <>
-                        <span className={`checklist-text${item.done?' done':''}`}>{item.text}</span>
-                        <button className="checklist-del" onClick={()=>editCheckItem(item.id,item.text)} title="편집" style={{fontSize:10}}>✎</button>
-                        <button className="checklist-del" onClick={()=>deleteCheckItem(item.id)}>×</button>
-                      </>
                     )}
                   </div>
-                ))}
-                <div className="checklist-add-row">
-                  <input className="checklist-input" value={newCheckItem}
-                    onChange={e=>setNewCheckItem(e.target.value)}
-                    onKeyDown={e=>e.key==='Enter'&&addCheckItem()} placeholder="새 항목 추가" />
-                  <button className="checklist-add-btn" onClick={addCheckItem}>+</button>
+
+                  <div className="modal-actions">
+                    <button className="sm-button" onClick={()=>setPinModal({open:false,dateKey:'',memo:'',image:null})}>취소</button>
+                    <button className="sm-button" style={{background:'var(--accent)',color:'#fff',borderColor:'var(--accent)'}} onClick={savePinMemo}>저장</button>
+                  </div>
                 </div>
               </div>
+            )}
+
+            {/* ALL MEMOS MODAL */}
+            {showMemos && (() => {
+              const allMemos=[];
+              calendars.forEach(cal=>{
+                Object.entries(cal.pinnedDates||{}).forEach(([dateKey,pinData])=>{
+                  const memo=typeof pinData==='string'?pinData:(pinData?.memo||'');
+                  const img=typeof pinData==='string'?null:(pinData?.image||null);
+                  if(memo||img) allMemos.push({dateKey,memo,img,calTitle:cal.title,calColor:cal.color});
+                });
+              });
+              allMemos.sort((a,b)=>{
+                const [ay,am,ad]=a.dateKey.split('-').map(Number);
+                const [by,bm,bd]=b.dateKey.split('-').map(Number);
+                return new Date(by,bm-1,bd)-new Date(ay,am-1,ad);
+              });
+              const grouped={};
+              allMemos.forEach(m=>{
+                const [y,mo]=m.dateKey.split('-');
+                const key=`${y}.${String(mo).padStart(2,'0')}`;
+                if(!grouped[key]) grouped[key]=[];
+                grouped[key].push(m);
+              });
+              return (
+                <div className="bottom-sheet-overlay" onClick={()=>setShowMemos(false)}>
+                  <div className="bottom-sheet" onClick={e=>e.stopPropagation()}>
+                    <div className="sheet-handle" />
+                    <p className="memos-modal-title">전체 메모</p>
+                    {allMemos.length===0 ? (
+                      <p className="memos-empty">아직 메모가 없어요.</p>
+                    ) : (
+                      Object.entries(grouped).map(([monthLabel,entries])=>(
+                        <div key={monthLabel}>
+                          <p className="memo-group-label">{monthLabel}</p>
+                          {entries.map((m,i)=>(
+                            <div key={i} className="memo-entry">
+                              <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:5}}>
+                                <div style={{width:5,height:5,borderRadius:'50%',background:m.calColor,flexShrink:0}} />
+                                <span className="memo-entry-date">{m.calTitle} · {m.dateKey.replace(/-/g,'.')}</span>
+                              </div>
+                              {m.memo?<p className="memo-entry-text">{m.memo}</p>:null}
+                              {m.img?<img src={m.img} alt="" className="memo-entry-img"/>:null}
+                            </div>
+                          ))}
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Tab bar */}
+            <div className="phone-tab-bar">
+              <button className={`tab-btn${activeTab==='today'?' active':''}`} onClick={()=>setActiveTab('today')}>
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="3"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                  <circle cx="12" cy="16" r="1.5" fill="currentColor" stroke="none"/>
+                </svg>
+                today
+                {activeTab==='today' && <div className="tab-active-bar" />}
+              </button>
+              <button className={`tab-btn${activeTab==='calendar'?' active':''}`} onClick={()=>setActiveTab('calendar')}>
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="3"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                  <line x1="7" y1="15" x2="17" y2="15"/>
+                  <line x1="7" y1="19" x2="13" y2="19"/>
+                </svg>
+                calendar
+                {activeTab==='calendar' && <div className="tab-active-bar" />}
+              </button>
+              <button className={`tab-btn${activeTab==='settings'?' active':''}`} onClick={()=>{
+                if(window.innerWidth < 1000) setIsSettingsSheetOpen(true);
+                else setActiveTab('settings');
+              }}>
+                <svg viewBox="0 0 24 24" fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="3"/>
+                  <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+                </svg>
+                settings
+                {activeTab==='settings' && <div className="tab-active-bar" />}
+              </button>
             </div>
-
-            {/* RIGHT: postit notes */}
-            {currentMonthPins.length>0 && (
-              <div className="postit-col">
-                {currentMonthPins.map(([dateKey,pinData],idx)=>{
-                  const pin=pinData;
-                  const memo=typeof pin==='string'?pin:(pin?.memo||'');
-                  const img=typeof pin==='string'?null:(pin?.image||null);
-                  const dayNum=dateKey.split('-')[2];
-                  return (
-                    <div key={dateKey} className="postit"
-                      style={{borderTop:`2px solid ${currentCalendar.color}`}}>
-                      <div className="postit-day-bg">{dayNum}</div>
-                      <p className="postit-date">{formatDateKey(dateKey)}</p>
-                      <p className="postit-memo">{memo}</p>
-                      {img ? <img src={img} alt="" style={{width:'100%',borderRadius:0,marginTop:6,display:'block'}} /> : null}
-                      <div className="postit-actions">
-                        <button className="postit-btn" onClick={()=>{
-                          const ex=currentCalendar.pinnedDates?.[dateKey]||{};
-                          const m=typeof ex==='string'?ex:(ex.memo||'');
-                          const im=typeof ex==='string'?null:(ex.image||null);
-                          setPinModal({open:true,dateKey,memo:m,image:im,imgEdit:defaultImgEdit});
-                        }} title="편집"><IconPen size={10}/></button>
-                        <button className="postit-btn del" onClick={()=>removePin(dateKey)} title="삭제"><IconX size={8}/></button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
           </div>
-
-          {/* EXPORT BUTTON */}
-          <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap',justifyContent:'center'}}>
-            <button className={`export-btn${exportStatus==='copied'?' done':''}`} onClick={exportCalendar}
-              disabled={exportStatus==='loading'||exportStatus==='download'}>
-              {exportStatus==='loading'&&'…'}
-              {exportStatus==='copied'&&'✓ 클립보드에 복사됨'}
-              {(exportStatus==='idle'||exportStatus==='download')&&'export'}
-            </button>
-            {exportStatus==='download'&&exportBlobUrl&&(
-              <a href={exportBlobUrl}
-                download={`calendar-${currentDate.getFullYear()}-${String(currentDate.getMonth()+1).padStart(2,'0')}.png`}
-                className="export-btn done" style={{textDecoration:'none'}}
-                onClick={()=>{setTimeout(()=>{setExportStatus('idle');URL.revokeObjectURL(exportBlobUrl);setExportBlobUrl(null);},500);}}>
-                ↓ 이미지 다운로드</a>
-            )}
-          </div>
-          </React.Fragment>
-        )}
         </div>
 
-        {/* PIN MODAL */}
-        {pinModal.open && (
-          <div className="modal-overlay" onClick={()=>setPinModal({open:false,dateKey:'',memo:'',image:null})}>
-            <div className="modal-card" onClick={e=>e.stopPropagation()}>
-              <p className="modal-date-label">{formatDateKey(pinModal.dateKey)}</p>
-              <p className="modal-cal-label">{currentCalendar.title||''}</p>
-              <p className="modal-hint">메모를 비우고 저장하면 핀이 제거돼요.</p>
-              <textarea className="modal-textarea" value={pinModal.memo}
-                onChange={e=>setPinModal(prev=>({...prev,memo:e.target.value}))}
-                placeholder="이 날짜에 대해 남겨두고 싶은 말" autoFocus />
-
-              <div style={{marginBottom:12}}>
-                {pinModal.image ? (() => {
-                  const ie=pinModal.imgEdit||defaultImgEdit;
-                  const btnSt=(active)=>({
-                    padding:'4px 8px',border:`1px solid ${active?'var(--border-hi)':'var(--border)'}`,
-                    borderRadius:0,cursor:'pointer',
-                    background:active?'var(--press)':'transparent',
-                    color:active?'var(--text-1)':'var(--text-2)',fontSize:12,
-                  });
-                  return (
-                    <div>
-                      <div style={{
-                        position:'relative',width:'100%',height:150,overflow:'hidden',borderRadius:0,
-                        marginBottom:7,display:'flex',alignItems:'center',justifyContent:'center',
-                        cursor:'grab',userSelect:'none',border:'1px solid var(--border)',
-                      }}
-                        onPointerDown={e=>{
-                          e.currentTarget.setPointerCapture(e.pointerId);
-                          imgDragRef.current={active:true,startX:e.clientX,startY:e.clientY,
-                            baseOffX:(pinModal.imgEdit||defaultImgEdit).offsetX,baseOffY:(pinModal.imgEdit||defaultImgEdit).offsetY};
-                          e.currentTarget.style.cursor='grabbing';
-                        }}
-                        onPointerMove={e=>{
-                          if(!imgDragRef.current.active) return;
-                          const dx=e.clientX-imgDragRef.current.startX,dy=e.clientY-imgDragRef.current.startY;
-                          setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),offsetX:imgDragRef.current.baseOffX+dx,offsetY:imgDragRef.current.baseOffY+dy}}));
-                        }}
-                        onPointerUp={e=>{imgDragRef.current.active=false;e.currentTarget.releasePointerCapture(e.pointerId);e.currentTarget.style.cursor='grab';}}>
-                        <img src={pinModal.image} alt="" style={{position:'absolute',inset:0,width:'100%',height:'100%',objectFit:'cover',filter:'blur(12px)',transform:'scale(1.15)',pointerEvents:'none',opacity:0.8}} />
-                        <img src={pinModal.image} alt="" style={{maxWidth:'100%',maxHeight:'100%',display:'block',position:'relative',zIndex:1,
-                          transform:`translate(${ie.offsetX}px,${ie.offsetY}px) rotate(${ie.rotate}deg) scaleX(${ie.flipH?-1:1}) scaleY(${ie.flipV?-1:1}) scale(${ie.scale})`,
-                          transformOrigin:'center',pointerEvents:'none'}} />
-                        <button onPointerDown={e=>e.stopPropagation()}
-                          onClick={e=>{e.stopPropagation();setPinModal(prev=>({...prev,image:null,imgEdit:defaultImgEdit}));}}
-                          style={{position:'absolute',top:5,right:5,zIndex:2,background:'rgba(0,0,0,0.4)',border:'none',borderRadius:'50%',
-                            width:20,height:20,cursor:'pointer',color:'#fff',display:'flex',alignItems:'center',justifyContent:'center',padding:0}}>
-                          <IconX size={8}/>
-                        </button>
-                        {(ie.offsetX!==0||ie.offsetY!==0)&&(
-                          <button onPointerDown={e=>e.stopPropagation()}
-                            onClick={e=>{e.stopPropagation();setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),offsetX:0,offsetY:0}}));}}
-                            style={{position:'absolute',bottom:5,right:5,zIndex:2,background:'rgba(0,0,0,0.3)',border:'none',borderRadius:0,
-                              padding:'2px 6px',cursor:'pointer',color:'#fff',fontSize:9}}>중앙 초기화</button>
-                        )}
-                      </div>
-                      <div style={{display:'flex',flexWrap:'wrap',gap:5,alignItems:'center'}}>
-                        <button style={btnSt(false)} title="90° 왼쪽" onClick={()=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),rotate:((prev.imgEdit||defaultImgEdit).rotate-90+360)%360}}))}>↺</button>
-                        <button style={btnSt(false)} title="90° 오른쪽" onClick={()=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),rotate:((prev.imgEdit||defaultImgEdit).rotate+90)%360}}))}>↻</button>
-                        <button style={btnSt(ie.flipH)} title="좌우 반전" onClick={()=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),flipH:!(prev.imgEdit||defaultImgEdit).flipH}}))}>↔</button>
-                        <button style={btnSt(ie.flipV)} title="상하 반전" onClick={()=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),flipV:!(prev.imgEdit||defaultImgEdit).flipV}}))}>↕</button>
-                        <input type="range" min="0.4" max="2.0" step="0.05" value={ie.scale}
-                          onChange={e=>setPinModal(prev=>({...prev,imgEdit:{...(prev.imgEdit||defaultImgEdit),scale:parseFloat(e.target.value)}}))}
-                          style={{flex:1,minWidth:60,cursor:'pointer'}} title={`${Math.round(ie.scale*100)}%`} />
-                        <span style={{fontSize:10,color:'var(--text-3)',minWidth:28}}>{Math.round(ie.scale*100)}%</span>
-                      </div>
-                    </div>
-                  );
-                })() : (
-                  <div style={{display:'flex',alignItems:'center',gap:8}}>
-                    <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer'}}>
-                      <input type="file" accept="image/*" style={{display:'none'}} onChange={handleImageSelect} />
-                      <span style={{padding:'5px 12px',border:'1px solid var(--border)',borderRadius:0,fontSize:11,color:'var(--text-2)',cursor:'pointer'}}>+ 사진 첨부</span>
-                    </label>
-                    <span style={{fontSize:10,color:'var(--text-3)'}}>또는 Ctrl+V 붙여넣기</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="modal-actions">
-                <button className="sm-button" onClick={()=>setPinModal({open:false,dateKey:'',memo:'',image:null})}>취소</button>
-                <button className="sm-button" style={{background:'var(--text-1)',color:'#fff',borderColor:'var(--text-1)'}} onClick={savePinMemo}>저장</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* ALL MEMOS MODAL */}
-        {showMemos && (() => {
-          const allMemos=[];
-          calendars.forEach(cal=>{
-            Object.entries(cal.pinnedDates||{}).forEach(([dateKey,pinData])=>{
-              const memo=typeof pinData==='string'?pinData:(pinData?.memo||'');
-              const img=typeof pinData==='string'?null:(pinData?.image||null);
-              if(memo||img) allMemos.push({dateKey,memo,img,calTitle:cal.title,calColor:cal.color});
-            });
-          });
-          allMemos.sort((a,b)=>{
-            const [ay,am,ad]=a.dateKey.split('-').map(Number);
-            const [by,bm,bd]=b.dateKey.split('-').map(Number);
-            return new Date(by,bm-1,bd)-new Date(ay,am-1,ad);
-          });
-          const grouped={};
-          allMemos.forEach(m=>{
-            const [y,mo]=m.dateKey.split('-');
-            const key=`${y}.${String(mo).padStart(2,'0')}`;
-            if(!grouped[key]) grouped[key]=[];
-            grouped[key].push(m);
-          });
-          return (
-            <div className="modal-overlay" onClick={()=>setShowMemos(false)}>
-              <div className="memos-modal-card" onClick={e=>e.stopPropagation()}>
-                <p className="memos-modal-title">전체 메모</p>
-                {allMemos.length===0 ? (
-                  <p className="memos-empty">아직 메모가 없어요.</p>
-                ) : (
-                  Object.entries(grouped).map(([monthLabel,entries])=>(
-                    <div key={monthLabel}>
-                      <p className="memo-group-label">{monthLabel}</p>
-                      {entries.map((m,i)=>(
-                        <div key={i} className="memo-entry">
-                          <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:5}}>
-                            <div style={{width:5,height:5,borderRadius:'50%',background:m.calColor,flexShrink:0}} />
-                            <span className="memo-entry-date">{m.calTitle} · {m.dateKey.replace(/-/g,'.')}</span>
-                          </div>
-                          {m.memo?<p className="memo-entry-text">{m.memo}</p>:null}
-                          {m.img?<img src={m.img} alt="" className="memo-entry-img"/>:null}
-                        </div>
-                      ))}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          );
-        })()}
+        {/* ── SIDE PANEL (wide screens only) ── */}
+        <div className="side-panel">
+          <p style={{fontSize:11,fontWeight:600,color:'var(--text-2)',letterSpacing:'0.1em',textTransform:'uppercase',marginBottom:16}}>Appearance</p>
+          <SettingsContent />
+        </div>
 
       </div>
     );
