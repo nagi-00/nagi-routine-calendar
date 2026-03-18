@@ -132,6 +132,81 @@
       letter-spacing: 0.06em;
     }
 
+/* ── hero header (main view) ── */
+.hero-header {
+  border-top: 2px solid var(--text-1);
+  padding-top: 12px;
+  margin-bottom: 14px;
+}
+.hero-nav {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.hero-title {
+  font-size: 30px; font-weight: 600; color: var(--text-1);
+  letter-spacing: -0.02em; line-height: 1.05; cursor: pointer;
+}
+.hero-year {
+  font-size: 16px; font-weight: 400; color: var(--text-3); margin-left: 8px;
+}
+.hero-subtitle {
+  font-size: 11px; color: var(--text-3);
+  letter-spacing: 0.05em; margin-top: 6px;
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+}
+.hero-cal-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+}
+
+/* ── stats row ── */
+.stats-row {
+  display: flex;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 0; margin-bottom: 16px;
+}
+.stat-item {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 3px; flex: 1;
+}
+.stat-number {
+  font-size: 20px; font-weight: 700; color: var(--text-1);
+  line-height: 1; font-family: 'DM Mono', monospace;
+}
+.stat-label {
+  font-size: 9px; color: var(--text-3);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.stat-divider {
+  width: 1px; background: var(--border); align-self: stretch;
+}
+
+/* ── today memo button ── */
+.today-memo-btn {
+  width: 100%; padding: 10px 14px; margin-top: 14px;
+  background: var(--text-1); color: #fff; border: none;
+  font-size: 10px; font-family: 'DM Mono', monospace;
+  text-transform: uppercase; letter-spacing: 0.08em;
+  cursor: pointer; transition: opacity 0.08s;
+}
+.today-memo-btn:hover { opacity: 0.82; }
+.today-memo-btn:active { opacity: 0.7; }
+
+/* ── empty state ── */
+.empty-state {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 60px 20px; text-align: center;
+}
+.empty-state-icon {
+  font-size: 28px; margin-bottom: 14px; color: var(--border-hi);
+}
+.empty-state-title {
+  font-size: 13px; font-weight: 500; color: var(--text-2); margin-bottom: 6px;
+}
+.empty-state-desc {
+  font-size: 11px; color: var(--text-3); letter-spacing: 0.03em; line-height: 1.6;
+}
+
     /* ── calendar grid ── */
     .calendar-grid {
       display: grid;
@@ -177,7 +252,7 @@
       transition: none;
     }
     .calendar-item:hover { background: var(--hover); }
-    .calendar-item.selected { background: var(--press); color: var(--text-1); font-weight:500; border-bottom-color: var(--border-hi); }
+    .calendar-item.selected { background: var(--press); color: var(--text-1); font-weight:500; border-bottom-color: var(--border-hi); border-left: 3px solid var(--text-1); padding-left: 7px; }
     .calendar-item.drag-over { border-top: 2px solid var(--border-hi); }
     .cal-item-left { display:flex; align-items:center; gap:7px; flex:1; min-width:0; }
     .cal-color-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
@@ -463,6 +538,8 @@
       .calendar-container { width:calc(100vw - 20px); max-width:400px; padding:18px 14px; }
       .cal-drag-handle { opacity:0.4; }
       #calendar-export-area { border-radius:0 !important; }
+      .postit-col { flex-direction:row; overflow-x:auto; -webkit-overflow-scrolling:touch; padding-bottom:8px; gap:10px; }
+      .postit { min-width:140px; }
     }
   </style>
 </head>
@@ -656,6 +733,16 @@
       window.addEventListener('paste', handlePaste);
       return () => window.removeEventListener('paste', handlePaste);
     }, [pinModal.open]);
+
+    React.useEffect(() => {
+      const handleKeyDown = (e) => {
+        if (e.key !== 'Escape') return;
+        if (pinModal.open) setPinModal(prev => ({...prev, open:false}));
+        else if (showMemos) setShowMemos(false);
+      };
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [pinModal.open, showMemos]);
 
     const saveSettings = (s) => {
       localStorage.setItem('nagi-flat-settings', JSON.stringify(s));
@@ -895,8 +982,15 @@
       setDragOverId(null); draggedIdRef.current=null;
     };
 
-    const currentCalendar = calendars.find(c=>c.id===selectedCalendar) || { completedDates:[], color:'#9CA3AF', pinnedDates:{} };
+    const currentCalendar = calendars.find(c=>c.id===selectedCalendar) || { completedDates:[], color:'#9CA3AF', pinnedDates:{}, title:'' };
     const daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate();
+    const completedThisMonth = (selectedCalendar && selectedCalendar !== 'all')
+      ? currentCalendar.completedDates.filter(d => {
+          const parts = d.split('-');
+          return parseInt(parts[0]) === currentDate.getFullYear() && parseInt(parts[1]) === currentDate.getMonth()+1;
+        }).length
+      : 0;
+    const completionRate = daysInMonth > 0 ? Math.round((completedThisMonth / daysInMonth) * 100) : 0;
     const weekStart = settings.weekStart||'sun';
     const DOW_LABELS = weekStart==='mon' ? ['MON','TUE','WED','THU','FRI','SAT','SUN'] : ['SUN','MON','TUE','WED','THU','FRI','SAT'];
     const rawFirstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).getDay();
@@ -931,6 +1025,29 @@
         {/* SIDEBAR */}
         <div className={`sidebar${isSidebarCollapsed?' collapsed':''} ${settings.sidebarPosition==='right'?'right-side':''}`}>
           <p className="sidebar-title">List</p>
+
+          {selectedCalendar && selectedCalendar !== 'all' && (() => {
+            const selCal = calendars.find(c => c.id === selectedCalendar);
+            if (!selCal) return null;
+            const thisDone = (selCal.completedDates || []).filter(d => {
+              const p = d.split('-');
+              return parseInt(p[0]) === currentDate.getFullYear() && parseInt(p[1]) === currentDate.getMonth()+1;
+            }).length;
+            const rate = daysInMonth > 0 ? Math.round((thisDone / daysInMonth) * 100) : 0;
+            return (
+              <div style={{marginBottom:14,paddingBottom:14,borderBottom:`1px solid var(--border)`}}>
+                <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:5}}>
+                  <div style={{width:9,height:9,borderRadius:'50%',background:selCal.color,flexShrink:0}} />
+                  <span style={{fontSize:12,fontWeight:600,color:'var(--text-1)',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',flex:1}}>{selCal.title}</span>
+                  <span style={{fontSize:10,color:'var(--text-3)',fontFamily:"'DM Mono',monospace",flexShrink:0}}>{rate}%</span>
+                </div>
+                <div style={{height:2,background:'var(--border)',position:'relative',overflow:'hidden'}}>
+                  <div style={{position:'absolute',left:0,top:0,height:'100%',width:`${rate}%`,background:selCal.color}} />
+                </div>
+                <div style={{fontSize:9,color:'var(--text-3)',marginTop:5,letterSpacing:'0.06em',textTransform:'uppercase'}}>{thisDone} / {daysInMonth} completed</div>
+              </div>
+            );
+          })()}
 
           <div className="calendar-list">
             {calendars.length>0 && (
@@ -1113,7 +1230,13 @@
         <div className={`main-content${isSidebarCollapsed?' expanded':''} ${settings.sidebarPosition==='right'?'right-sidebar':''}`}>
 
         {/* OVERVIEW (모아보기) */}
-        {selectedCalendar==='all' ? (() => {
+        {calendars.length===0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">◯</div>
+            <p className="empty-state-title">아직 캘린더가 없어요</p>
+            <p className="empty-state-desc">사이드바에서 첫 캘린더를<br/>만들어보세요</p>
+          </div>
+        ) : selectedCalendar==='all' ? (() => {
           const activeCals = calendars.length>4
             ? calendars.filter(c=>(overviewPicks??calendars.slice(0,4).map(c=>c.id)).includes(c.id))
             : calendars;
@@ -1212,14 +1335,36 @@
             {/* LEFT: calendar + focus + checklist */}
             <div style={{flex:'0 0 360px',width:360}}>
               <div className="calendar-container">
-                <div className="month-navigator">
-                  <button className="nav-button" onClick={()=>navigateMonth('prev')}>←</button>
-                  <span className="month-title" onClick={()=>setCurrentDate(new Date())} title="오늘로 이동" style={{cursor:'pointer'}}>
-                    {currentDate.toLocaleString('en-US',{month:'long',year:'numeric'})}
-                  </span>
-                  <button className="nav-button" onClick={()=>navigateMonth('next')}>→</button>
+                <div className="hero-header">
+                  <div className="hero-nav">
+                    <button className="nav-button" onClick={()=>navigateMonth('prev')}>←</button>
+                    <button className="nav-button" onClick={()=>navigateMonth('next')}>→</button>
+                  </div>
+                  <div className="hero-title" onClick={()=>setCurrentDate(new Date())} title="오늘로 이동">
+                    {currentDate.toLocaleString('en-US',{month:'long'})}
+                    <span className="hero-year">{currentDate.getFullYear()}</span>
+                  </div>
+                  <div className="hero-subtitle">
+                    {currentCalendar.title && (<><div className="hero-cal-dot" style={{background:currentCalendar.color}} /><span>{currentCalendar.title}</span><span>·</span></>)}
+                    <span>{settings.subtitle}</span>
+                  </div>
                 </div>
-                <p className="calendar-subtitle">{settings.subtitle}</p>
+                <div className="stats-row">
+                  <div className="stat-item">
+                    <span className="stat-number">{daysInMonth}</span>
+                    <span className="stat-label">days</span>
+                  </div>
+                  <div className="stat-divider" />
+                  <div className="stat-item">
+                    <span className="stat-number">{completedThisMonth}</span>
+                    <span className="stat-label">done</span>
+                  </div>
+                  <div className="stat-divider" />
+                  <div className="stat-item">
+                    <span className="stat-number">{completionRate}%</span>
+                    <span className="stat-label">rate</span>
+                  </div>
+                </div>
                 <div className="calendar-grid" style={{marginBottom:6}}>
                   {DOW_LABELS.map(d=><div key={d} className="calendar-day day-header">{d}</div>)}
                 </div>
@@ -1250,6 +1395,11 @@
                     );
                   })}
                 </div>
+                {todayDay > 0 && (
+                  <button className="today-memo-btn" onClick={()=>openPinModal(todayObj.getDate())}>
+                    + 오늘 ({todayDay}일) 메모 추가
+                  </button>
+                )}
               </div>
 
               {focusMessage && (
