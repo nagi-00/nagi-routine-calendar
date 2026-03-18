@@ -1464,7 +1464,7 @@
                       <div className="postit-day-bg">{dayNum}</div>
                       <p className="postit-date">{formatDateKey(dateKey)}</p>
                       <p className="postit-memo">{memo}</p>
-                      {img ? <img src={img} alt="" style={{width:'100%',borderRadius:4,marginTop:6,display:'block'}} /> : null}
+                      {img ? <img src={img} alt="" style={{width:'100%',borderRadius:0,marginTop:6,display:'block'}} /> : null}
                       <div className="postit-actions">
                         <button className="postit-btn" onClick={()=>{
                           const ex=currentCalendar.pinnedDates?.[dateKey]||{};
