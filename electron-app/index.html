@@ -12,10 +12,6 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
 
-  <!-- Firebase (compat) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-
   <!-- dom-to-image -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
 
@@ -27,12 +23,28 @@
 
     /* ── 색상 토큰 ── */
     :root {
-      --bg:          #EEEAE3;
-      --sh-dark:     #CEC8BE;
+      /* ── 기존 뉴모픽 토큰 (호환성 유지) ── */
+      --sh-dark:     #C8D4D3;
       --sh-light:    #FFFFFF;
-      --text-pri:    #2C2825;
-      --text-sub:    #8C8680;
-      --text-muted:  #B8B2AA;
+      --text-pri:    #2A2A2A;
+      --text-sub:    #6B6B6B;
+      --text-muted:  #ABABAB;
+
+      /* ── 새 팔레트 토큰 ── */
+      --bg:          #F0EBE2;
+      --surface:     #FFFFFF;
+      --border:      #C0D8D6;
+      --border-hi:   #8BBAB6;
+      --accent:      #8BBFCC;
+      --text-1:      #2A2A2A;
+      --text-2:      #6B6B6B;
+      --text-3:      #ABABAB;
+      --text-accent: #7DADA8;
+      --hover:       #EFF6F6;
+      --press:       #E3F0EF;
+      --radius-card: 18px;
+      --radius-btn:  12px;
+      --radius-pill: 999px;
     }
 
     * {
@@ -45,6 +57,31 @@
     body {
       background-color: var(--bg);
       min-height: 100vh;
+      position: relative;
+    }
+
+    /* ── 배경 블롭 장식 ── */
+    body::before {
+      content: '';
+      position: fixed;
+      width: 320px; height: 320px;
+      background: rgba(139, 186, 182, 0.18);
+      border-radius: 50%;
+      top: 10%; left: 28%;
+      filter: blur(48px);
+      pointer-events: none;
+      z-index: 0;
+    }
+    body::after {
+      content: '';
+      position: fixed;
+      width: 200px; height: 200px;
+      background: rgba(139, 191, 204, 0.14);
+      border-radius: 50%;
+      top: 55%; right: 18%;
+      filter: blur(36px);
+      pointer-events: none;
+      z-index: 0;
     }
 
     .app-container {
@@ -56,7 +93,7 @@
     /* ── 사이드바 ── */
     .sidebar {
       width: 300px;
-      background: var(--bg);
+      background: var(--surface);
       height: 100vh;
       position: fixed;
       left: 0;
@@ -64,21 +101,24 @@
       transition: transform 0.3s ease;
       z-index: 10;
       padding: 28px 24px;
-      box-shadow: 8px 0 24px var(--sh-dark), -2px 0 10px var(--sh-light);
+      border-right: 1.5px solid var(--border);
+      box-shadow: none;
       overflow-y: auto;
     }
     .sidebar.collapsed { transform: translateX(-300px); }
     .sidebar.right-side {
       left: auto;
       right: 0;
-      box-shadow: -8px 0 24px var(--sh-dark), 2px 0 10px var(--sh-light);
+      border-right: none;
+      border-left: 1.5px solid var(--border);
+      box-shadow: none;
     }
     .sidebar.right-side.collapsed { transform: translateX(300px); }
 
     .sidebar-title {
       font-size: 15px;
       font-weight: 500;
-      color: var(--text-sub);
+      color: var(--text-2);
       margin-bottom: 20px;
       letter-spacing: 0.08em;
     }
@@ -88,26 +128,29 @@
       left: 300px;
       top: 20px;
       z-index: 20;
-      background: var(--bg);
-      border: none;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-left: none;
       padding: 10px 14px;
       cursor: pointer;
-      transition: left 0.3s ease, right 0.3s ease;
-      border-radius: 0 12px 12px 0;
-      box-shadow: 6px 4px 12px var(--sh-dark), -1px -4px 10px var(--sh-light);
-      color: var(--text-sub);
+      transition: left 0.3s ease, right 0.3s ease, background 0.15s;
+      border-radius: 0 var(--radius-btn) var(--radius-btn) 0;
+      box-shadow: none;
+      color: var(--text-2);
       font-size: 15px;
     }
+    .toggle-button:hover { background: var(--hover); }
     .toggle-button.collapsed { left: 0; }
     .toggle-button.right-side {
       left: auto;
       right: 300px;
-      border-radius: 12px 0 0 12px;
-      box-shadow: -6px 4px 12px var(--sh-dark), 1px -4px 10px var(--sh-light);
+      border-radius: var(--radius-btn) 0 0 var(--radius-btn);
+      border-left: 1.5px solid var(--border);
+      border-right: none;
     }
     .toggle-button.right-side.collapsed { right: 0; }
     .toggle-button:active {
-      box-shadow: inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light);
+      background: var(--press);
     }
 
     /* ── 메인 컨테이너 ── */
@@ -133,12 +176,13 @@
 
     /* ── 달력 카드 ── */
     .calendar-container {
-      background: var(--bg);
-      border-radius: 24px;
+      background: var(--surface);
+      border-radius: 20px;
       padding: 28px 24px;
       width: 380px;
       flex-shrink: 0;
-      box-shadow: 10px 10px 20px var(--sh-dark), -10px -10px 20px var(--sh-light);
+      border: 2px solid var(--border);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.07);
     }
 
     .month-navigator {
@@ -150,31 +194,37 @@
 
     .month-title {
       font-size: 17px;
-      font-weight: 500;
-      color: var(--text-pri);
+      font-weight: 700;
+      color: var(--text-1);
+      letter-spacing: -0.01em;
     }
 
     .nav-button {
-      background: var(--bg);
-      border: none;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
       padding: 8px 12px;
       cursor: pointer;
-      color: var(--text-sub);
+      color: var(--text-2);
       font-size: 15px;
-      border-radius: 10px;
-      box-shadow: 4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light);
-      transition: box-shadow 0.15s ease;
+      border-radius: var(--radius-btn);
+      box-shadow: none;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .nav-button:hover {
+      background: var(--hover);
+      border-color: var(--border-hi);
     }
     .nav-button:active {
-      box-shadow: inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light);
+      background: var(--press);
     }
 
     .calendar-subtitle {
       font-size: 11px;
-      color: var(--text-muted);
+      color: var(--text-3);
       text-align: center;
       margin-bottom: 20px;
       letter-spacing: 0.06em;
+      font-style: italic;
     }
 
     /* ── 달력 그리드 ── */
@@ -200,23 +250,25 @@
       align-items: center;
       justify-content: center;
       font-size: 13px;
-      border: none;
+      border: 1.5px solid transparent;
       cursor: pointer;
       border-radius: 50%;
       background: transparent;
-      color: var(--text-pri);
-      transition: box-shadow 0.15s ease;
+      color: var(--text-1);
+      transition: background 0.12s, border-color 0.12s;
       touch-action: manipulation;
       user-select: none;
     }
     .calendar-day.day-header {
       font-size: 11px;
-      color: var(--text-muted);
+      color: var(--text-3);
       cursor: default;
       background: transparent;
+      border-color: transparent;
     }
     .calendar-day:not(.day-header):not(.day-empty):hover {
-      box-shadow: 3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light);
+      background: var(--hover);
+      border-color: var(--border);
     }
 
     .pin-dot {
@@ -237,22 +289,27 @@
 
     .calendar-item {
       padding: 10px 14px;
-      border-radius: 12px;
+      border-radius: var(--radius-btn);
       cursor: pointer;
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 8px;
-      transition: box-shadow 0.15s ease;
-      color: var(--text-sub);
+      transition: background 0.12s, border-color 0.12s;
+      color: var(--text-2);
       font-size: 14px;
       gap: 8px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
     }
     .calendar-item:hover {
-      box-shadow: 3px 3px 8px var(--sh-dark), -3px -3px 8px var(--sh-light);
+      background: var(--hover);
+      border-color: var(--border-hi);
     }
     .calendar-item.selected {
-      box-shadow: inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light);
+      border-color: var(--border-hi);
+      border-width: 2px;
+      background: var(--surface);
     }
 
     .cal-item-left {
@@ -287,22 +344,28 @@
       pointer-events: auto;
     }
     .icon-btn {
-      background: none;
-      border: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 1.5px solid transparent;
+      background: transparent;
       cursor: pointer;
-      color: var(--text-muted);
-      padding: 4px;
-      border-radius: 6px;
-      transition: color 0.15s;
+      color: var(--text-3);
+      padding: 0;
+      transition: color 0.15s, background 0.15s, border-color 0.15s;
       display: flex;
       align-items: center;
       justify-content: center;
     }
     .icon-btn:hover {
-      color: var(--text-sub);
+      background: var(--hover);
+      border-color: var(--border);
+      color: var(--text-2);
     }
     .icon-btn.del:hover {
       color: #C0796A;
+      border-color: rgba(192,121,106,0.3);
+      background: rgba(192,121,106,0.07);
     }
 
     /* ── 인라인 편집 폼 ── */
@@ -312,9 +375,10 @@
       gap: 8px;
       width: 100%;
       padding: 10px 12px;
-      border-radius: 12px;
+      border-radius: var(--radius-btn);
       margin-bottom: 8px;
-      box-shadow: inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light);
+      background: var(--hover);
+      border: 1.5px solid var(--border-hi);
     }
     .cal-edit-row {
       display: flex;
@@ -330,32 +394,41 @@
     .input-text {
       width: 100%;
       padding: 10px 14px;
-      border: none;
-      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-btn);
       margin-bottom: 12px;
-      background: var(--bg);
-      box-shadow: inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light);
-      color: var(--text-pri);
+      background: var(--surface);
+      color: var(--text-1);
       outline: none;
       font-size: 14px;
       font-family: 'HJSS', sans-serif;
+      transition: border-color 0.12s;
+      box-shadow: none;
+    }
+    .input-text:focus {
+      border-color: var(--border-hi);
+      box-shadow: 0 0 0 3px rgba(139,186,182,0.15);
     }
     .input-text::placeholder {
-      color: var(--text-muted);
+      color: var(--text-3);
     }
 
     .input-text-sm {
       flex: 1;
       padding: 7px 10px;
-      border: none;
+      border: 1.5px solid var(--border);
       border-radius: 10px;
-      background: var(--bg);
-      box-shadow: inset 3px 3px 7px var(--sh-dark), inset -3px -3px 7px var(--sh-light);
-      color: var(--text-pri);
+      background: var(--surface);
+      color: var(--text-1);
       outline: none;
       font-size: 13px;
       font-family: 'HJSS', sans-serif;
       min-width: 0;
+      transition: border-color 0.12s;
+      box-shadow: none;
+    }
+    .input-text-sm:focus {
+      border-color: var(--border-hi);
     }
 
     .color-picker-container {
@@ -366,58 +439,72 @@
     .color-picker {
       width: 42px;
       height: 42px;
-      border: none;
+      border: 1.5px solid var(--border);
       border-radius: 10px;
       cursor: pointer;
-      background: var(--bg);
-      box-shadow: 4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light);
+      background: var(--surface);
+      box-shadow: none;
       padding: 3px;
+      transition: border-color 0.12s;
     }
+    .color-picker:hover { border-color: var(--border-hi); }
 
     .color-picker-sm {
       width: 32px;
       height: 32px;
-      border: none;
+      border: 1.5px solid var(--border);
       border-radius: 8px;
       cursor: pointer;
-      background: var(--bg);
-      box-shadow: 3px 3px 6px var(--sh-dark), -3px -3px 6px var(--sh-light);
+      background: var(--surface);
+      box-shadow: none;
       padding: 2px;
       flex-shrink: 0;
+      transition: border-color 0.12s;
     }
+    .color-picker-sm:hover { border-color: var(--border-hi); }
 
     .add-button {
       flex-grow: 1;
       padding: 10px;
-      background: var(--bg);
+      background: var(--accent);
       border: none;
-      border-radius: 12px;
+      border-radius: var(--radius-btn);
       cursor: pointer;
-      box-shadow: 4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light);
-      color: var(--text-sub);
+      color: #fff;
       font-size: 14px;
-      transition: box-shadow 0.15s ease;
+      font-weight: 500;
+      transition: background 0.15s, box-shadow 0.15s;
       font-family: 'HJSS', sans-serif;
+      box-shadow: 0 2px 8px rgba(139,191,204,0.35);
+    }
+    .add-button:hover {
+      background: var(--text-accent);
+      box-shadow: 0 4px 12px rgba(139,191,204,0.45);
     }
     .add-button:active {
-      box-shadow: inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light);
+      background: var(--text-accent);
+      box-shadow: none;
     }
 
     .sm-button {
-      padding: 6px 10px;
-      background: var(--bg);
-      border: none;
-      border-radius: 8px;
+      padding: 6px 12px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-btn);
       cursor: pointer;
-      box-shadow: 3px 3px 6px var(--sh-dark), -3px -3px 6px var(--sh-light);
-      color: var(--text-sub);
+      color: var(--text-2);
       font-size: 12px;
-      transition: box-shadow 0.15s ease;
+      transition: background 0.12s, border-color 0.12s;
       font-family: 'HJSS', sans-serif;
       white-space: nowrap;
+      box-shadow: none;
+    }
+    .sm-button:hover {
+      background: var(--hover);
+      border-color: var(--border-hi);
     }
     .sm-button:active {
-      box-shadow: inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light);
+      background: var(--press);
     }
 
     /* ── 포커스 메시지 위젯 ── */
@@ -425,15 +512,16 @@
       width: 100%;
       max-width: 380px;
       margin-top: 20px;
-      background: var(--bg);
-      border-radius: 20px;
+      background: var(--surface);
+      border-radius: var(--radius-card);
       padding: 20px 24px;
-      box-shadow: 8px 8px 16px var(--sh-dark), -8px -8px 16px var(--sh-light);
+      border: 2px solid var(--border);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.07);
     }
 
     .focus-widget-label {
       font-size: 10px;
-      color: var(--text-muted);
+      color: var(--text-3);
       letter-spacing: 0.12em;
       text-transform: uppercase;
       margin-bottom: 10px;
@@ -441,8 +529,9 @@
 
     .focus-widget-text {
       font-size: 13px;
-      color: var(--text-sub);
+      color: var(--text-2);
       line-height: 1.75;
+      font-style: italic;
     }
 
     /* ── export 버튼 ── */
@@ -452,25 +541,28 @@
       gap: 6px;
       margin-top: 16px;
       padding: 10px 20px;
-      background: var(--bg);
-      border: none;
-      border-radius: 14px;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-btn);
       cursor: pointer;
-      box-shadow: 5px 5px 10px var(--sh-dark), -5px -5px 10px var(--sh-light);
-      color: var(--text-sub);
+      box-shadow: none;
+      color: var(--text-2);
       font-size: 12px;
       letter-spacing: 0.08em;
-      transition: box-shadow 0.15s ease, color 0.2s ease;
+      transition: background 0.15s, border-color 0.15s, color 0.15s;
       font-family: 'HJSS', sans-serif;
     }
     .export-btn:hover {
-      color: var(--text-pri);
+      background: var(--hover);
+      border-color: var(--border-hi);
+      color: var(--text-1);
     }
     .export-btn:active {
-      box-shadow: inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light);
+      background: var(--press);
     }
     .export-btn.done {
       color: #6b9e7a;
+      border-color: #6b9e7a;
     }
 
     /* ── 포스트잇 ── */
@@ -484,23 +576,25 @@
 
     .postit {
       width: 168px;
-      background: var(--bg);
+      background: var(--surface);
       background-image: repeating-linear-gradient(
         to bottom,
         transparent,
         transparent 19px,
-        rgba(206, 200, 190, 0.22) 19px,
-        rgba(206, 200, 190, 0.22) 20px
+        rgba(192, 216, 214, 0.18) 19px,
+        rgba(192, 216, 214, 0.18) 20px
       );
-      border-radius: 2px 2px 10px 10px;
+      border-radius: var(--radius-card);
       padding: 32px 14px 16px;
-      box-shadow: 4px 8px 20px rgba(206,200,190,0.95), -3px -2px 10px rgba(255,255,255,0.85);
+      border: 2px solid var(--border);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.07);
       position: relative;
       overflow: hidden;
-      transition: box-shadow 0.2s ease, transform 0.2s ease;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
     .postit:hover {
-      box-shadow: 6px 12px 28px rgba(206,200,190,1), -4px -3px 12px rgba(255,255,255,0.9);
+      border-color: var(--border-hi);
+      box-shadow: 0 6px 20px rgba(0,0,0,0.1);
     }
 
     /* 압정 */
@@ -513,10 +607,8 @@
       height: 14px;
       border-radius: 50%;
       z-index: 2;
-      box-shadow:
-        0 2px 5px rgba(0,0,0,0.22),
-        inset 0 1px 3px rgba(255,255,255,0.65),
-        inset 0 -1px 2px rgba(0,0,0,0.18);
+      border: 2px solid rgba(255,255,255,0.6);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.18);
     }
 
     /* 고스트 날짜 숫자 */
@@ -528,7 +620,7 @@
       font-weight: 700;
       line-height: 1;
       opacity: 0.055;
-      color: #2C2825;
+      color: var(--text-1);
       user-select: none;
       pointer-events: none;
       letter-spacing: -0.02em;
@@ -536,7 +628,7 @@
 
     .postit-date {
       font-size: 9px;
-      color: var(--text-muted);
+      color: var(--text-3);
       letter-spacing: 0.12em;
       margin-bottom: 8px;
       text-transform: uppercase;
@@ -544,7 +636,7 @@
 
     .postit-memo {
       font-size: 12px;
-      color: var(--text-pri);
+      color: var(--text-1);
       line-height: 20px;
       white-space: pre-wrap;
       word-break: break-word;
@@ -568,34 +660,36 @@
       width: 22px;
       height: 22px;
       border-radius: 50%;
-      background: #EEEAE3;
-      border: none;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
       cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: 2px 2px 5px var(--sh-dark), -1px -1px 4px var(--sh-light);
-      color: var(--text-muted);
-      transition: color 0.15s ease, box-shadow 0.15s ease;
+      color: var(--text-3);
+      transition: color 0.15s ease, background 0.15s, border-color 0.15s;
       padding: 0;
+      box-shadow: none;
     }
     .postit-btn:hover {
-      color: var(--text-sub);
-      box-shadow: 3px 3px 7px var(--sh-dark), -2px -2px 5px var(--sh-light);
+      color: var(--text-2);
+      background: var(--hover);
+      border-color: var(--border-hi);
     }
     .postit-btn.del:hover {
       color: #C0796A;
+      border-color: rgba(192,121,106,0.4);
     }
     .postit-btn:active {
-      box-shadow: inset 2px 2px 4px var(--sh-dark), inset -1px -1px 3px var(--sh-light);
+      background: var(--press);
     }
 
     /* ── Pin 모달 ── */
     .modal-overlay {
       position: fixed;
       inset: 0;
-      background: rgba(238, 234, 227, 0.65);
-      backdrop-filter: blur(6px);
+      background: rgba(0,0,0,0.18);
+      backdrop-filter: none;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -603,44 +697,50 @@
     }
 
     .modal-card {
-      background: var(--bg);
+      background: var(--surface);
       border-radius: 20px;
       padding: 28px 26px;
       width: 300px;
-      box-shadow: 12px 12px 24px var(--sh-dark), -12px -12px 24px var(--sh-light);
+      border: 1.5px solid var(--border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
     }
 
     .modal-date-label {
       font-size: 10px;
-      color: var(--text-muted);
+      color: var(--text-3);
       letter-spacing: 0.12em;
       margin-bottom: 4px;
     }
 
     .modal-cal-label {
       font-size: 13px;
-      color: var(--text-sub);
+      color: var(--text-2);
       margin-bottom: 16px;
     }
 
     .modal-textarea {
       width: 100%;
       min-height: 110px;
-      border: none;
-      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      border-radius: var(--radius-btn);
       padding: 12px 14px;
-      background: var(--bg);
-      box-shadow: inset 4px 4px 8px var(--sh-dark), inset -4px -4px 8px var(--sh-light);
-      color: var(--text-pri);
+      background: var(--surface);
+      color: var(--text-1);
       outline: none;
       font-size: 13px;
       font-family: 'HJSS', sans-serif;
       resize: none;
       line-height: 1.65;
       margin-bottom: 16px;
+      transition: border-color 0.12s;
+      box-shadow: none;
+    }
+    .modal-textarea:focus {
+      border-color: var(--border-hi);
+      box-shadow: 0 0 0 3px rgba(139,186,182,0.15);
     }
     .modal-textarea::placeholder {
-      color: var(--text-muted);
+      color: var(--text-3);
     }
 
     .modal-actions {
@@ -658,18 +758,19 @@
 
     /* ── 비밀번호 화면 (구조 유지용, 사용 안 함) ── */
     .password-container {
-      background: var(--bg);
-      border-radius: 24px;
+      background: var(--surface);
+      border-radius: 20px;
       padding: 40px 32px;
       max-width: 360px;
       margin: 100px auto;
       text-align: center;
-      box-shadow: 10px 10px 20px var(--sh-dark), -10px -10px 20px var(--sh-light);
+      border: 1.5px solid var(--border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
     }
 
     .password-title {
       font-size: 15px;
-      color: var(--text-sub);
+      color: var(--text-2);
       margin-bottom: 24px;
       letter-spacing: 0.05em;
     }
@@ -678,7 +779,7 @@
     .settings-panel {
       margin-top: 24px;
       padding-top: 20px;
-      border-top: 1px solid var(--sh-dark);
+      border-top: 1px solid var(--border);
     }
     .settings-toggle {
       display: flex;
@@ -686,7 +787,7 @@
       justify-content: space-between;
       cursor: pointer;
       font-size: 13px;
-      color: var(--text-sub);
+      color: var(--text-2);
       letter-spacing: 0.06em;
       margin-bottom: 0;
       padding: 4px 0;
@@ -695,11 +796,11 @@
       width: 100%;
       font-family: 'HJSS', sans-serif;
     }
-    .settings-toggle:hover { color: var(--text-pri); }
+    .settings-toggle:hover { color: var(--text-1); }
     .settings-body { margin-top: 16px; }
     .settings-section-label {
       font-size: 9px;
-      color: var(--text-muted);
+      color: var(--text-3);
       letter-spacing: 0.14em;
       text-transform: uppercase;
       margin-bottom: 8px;
@@ -713,17 +814,19 @@
       width: 20px;
       height: 20px;
       border-radius: 50%;
-      border: none;
+      border: 2px solid rgba(255,255,255,0.6);
       cursor: pointer;
-      transition: box-shadow 0.15s;
+      transition: box-shadow 0.15s, transform 0.12s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
     }
+    .theme-dot:hover { transform: scale(1.15); }
     .focus-msg-item {
       display: flex;
       align-items: flex-start;
       gap: 6px;
       margin-bottom: 6px;
       font-size: 12px;
-      color: var(--text-sub);
+      color: var(--text-2);
       line-height: 1.5;
     }
     .focus-msg-text {
@@ -740,18 +843,20 @@
     .focus-add-textarea {
       flex: 1;
       min-height: 44px;
-      border: none;
+      border: 1.5px solid var(--border);
       border-radius: 10px;
       padding: 8px 10px;
-      background: var(--bg);
-      box-shadow: inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light);
-      color: var(--text-pri);
+      background: var(--surface);
+      color: var(--text-1);
       outline: none;
       font-size: 12px;
       font-family: 'HJSS', sans-serif;
       resize: none;
       line-height: 1.5;
+      transition: border-color 0.12s;
+      box-shadow: none;
     }
+    .focus-add-textarea:focus { border-color: var(--border-hi); }
 
     /* ── 포커스 위젯 헤더 행 ── */
     .focus-widget-header {
@@ -764,7 +869,7 @@
       background: none;
       border: none;
       cursor: pointer;
-      color: var(--text-muted);
+      color: var(--text-3);
       font-size: 14px;
       padding: 2px 4px;
       border-radius: 6px;
@@ -772,22 +877,23 @@
       line-height: 1;
     }
     .focus-refresh-btn:hover {
-      color: var(--text-sub);
+      color: var(--text-accent);
     }
 
     /* ── 체크리스트 ── */
     .checklist-card {
-      background: var(--bg);
-      border-radius: 18px;
+      background: var(--surface);
+      border-radius: var(--radius-card);
       padding: 16px 18px;
       margin-top: 14px;
-      box-shadow: 6px 6px 14px var(--sh-dark), -6px -6px 14px var(--sh-light);
+      border: 2px solid var(--border);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.07);
       width: 100%;
       box-sizing: border-box;
     }
     .checklist-title {
       font-size: 10px;
-      color: var(--text-muted);
+      color: var(--text-3);
       letter-spacing: 0.14em;
       text-transform: uppercase;
       margin-bottom: 10px;
@@ -797,29 +903,32 @@
       align-items: center;
       gap: 8px;
       padding: 5px 0;
-      border-bottom: 1px solid var(--sh-dark);
+      border-bottom: 1px solid var(--border);
     }
     .checklist-item:last-child { border-bottom: none; }
     .checklist-check {
       width: 16px; height: 16px;
       border-radius: 50%;
-      border: none;
-      background: var(--bg);
-      box-shadow: 2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light);
+      border: 1.5px solid var(--border-hi);
+      background: transparent;
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-      transition: box-shadow 0.12s;
+      transition: background 0.12s, border-color 0.12s;
       padding: 0;
+      box-shadow: none;
+    }
+    .checklist-check:hover {
+      background: var(--hover);
     }
     .checklist-check.done {
-      background: var(--text-sub);
-      box-shadow: 1px 1px 3px var(--sh-dark), -1px -1px 3px var(--sh-light);
+      background: var(--accent);
+      border-color: var(--accent);
     }
     .checklist-text {
       flex: 1;
       font-size: 12px;
-      color: var(--text-sub);
+      color: var(--text-2);
       line-height: 1.4;
       transition: opacity 0.15s;
       word-break: break-all;
@@ -830,7 +939,7 @@
     .checklist-del {
       background: transparent;
       border: none;
-      color: var(--text-muted);
+      color: var(--text-3);
       cursor: pointer;
       padding: 0 2px;
       font-size: 14px;
@@ -844,7 +953,7 @@
       background: transparent;
       border: none;
       cursor: pointer;
-      color: var(--text-muted);
+      color: var(--text-3);
       font-size: 11px;
       padding: 0 1px;
       line-height: 1;
@@ -853,7 +962,7 @@
       flex-shrink: 0;
     }
     .checklist-item:hover .checklist-star { opacity: 1; }
-    .checklist-star.starred { opacity: 1; color: var(--text-sub); }
+    .checklist-star.starred { opacity: 1; color: #C8B560; }
     .checklist-add-row {
       display: flex;
       gap: 6px;
@@ -862,77 +971,80 @@
     }
     .checklist-input {
       flex: 1;
-      background: var(--bg);
-      border: none;
+      background: var(--surface);
+      border: 1.5px solid var(--border);
       border-radius: 8px;
       padding: 5px 10px;
       font-size: 12px;
-      color: var(--text-pri);
+      color: var(--text-1);
       font-family: HJSS, sans-serif;
-      box-shadow: inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light);
       outline: none;
       min-width: 0;
+      transition: border-color 0.12s;
+      box-shadow: none;
     }
+    .checklist-input:focus { border-color: var(--border-hi); }
     .checklist-add-btn {
-      background: var(--bg);
+      background: var(--accent);
       border: none;
-      border-radius: 8px;
+      border-radius: 50%;
       width: 28px; height: 28px;
       cursor: pointer;
-      color: var(--text-sub);
+      color: #fff;
       font-size: 18px;
       line-height: 1;
-      box-shadow: 2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light);
       display: flex; align-items: center; justify-content: center;
       flex-shrink: 0;
-      transition: box-shadow 0.1s;
+      transition: background 0.12s;
       padding: 0;
+      box-shadow: 0 2px 6px rgba(139,191,204,0.35);
     }
-    .checklist-add-btn:active {
-      box-shadow: inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light);
-    }
+    .checklist-add-btn:hover { background: var(--text-accent); }
+    .checklist-add-btn:active { background: var(--text-accent); box-shadow: none; }
 
     /* ── 전체 메모 모달 ── */
     .memos-modal-card {
-      background: var(--bg);
-      border-radius: 24px;
+      background: var(--surface);
+      border-radius: 20px;
       padding: 32px 28px;
       width: 480px;
       max-width: 92vw;
       max-height: 80vh;
       overflow-y: auto;
-      box-shadow: 16px 16px 32px var(--sh-dark), -16px -16px 32px var(--sh-light);
+      border: 1.5px solid var(--border);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.12);
     }
     .memos-modal-title {
       font-size: 11px;
-      color: var(--text-muted);
+      color: var(--text-3);
       letter-spacing: 0.14em;
       text-transform: uppercase;
       margin-bottom: 20px;
     }
     .memo-group-label {
       font-size: 10px;
-      color: var(--text-muted);
+      color: var(--text-3);
       letter-spacing: 0.1em;
       text-transform: uppercase;
       margin: 16px 0 8px;
     }
     .memo-entry {
-      background: var(--bg);
+      background: var(--surface);
       border-radius: 14px;
       padding: 14px 16px;
       margin-bottom: 8px;
-      box-shadow: 4px 4px 8px var(--sh-dark), -4px -4px 8px var(--sh-light);
+      border: 1.5px solid var(--border);
+      box-shadow: none;
     }
     .memo-entry-date {
       font-size: 9px;
-      color: var(--text-muted);
+      color: var(--text-3);
       letter-spacing: 0.1em;
       margin-bottom: 6px;
     }
     .memo-entry-text {
       font-size: 12px;
-      color: var(--text-sub);
+      color: var(--text-2);
       line-height: 1.65;
       white-space: pre-wrap;
       word-break: break-word;
@@ -945,7 +1057,7 @@
     }
     .memos-empty {
       font-size: 12px;
-      color: var(--text-muted);
+      color: var(--text-3);
       text-align: center;
       padding: 32px 0;
     }
@@ -953,7 +1065,7 @@
     /* ── 드래그 핸들 ── */
     .cal-drag-handle {
       cursor: grab;
-      color: var(--text-muted);
+      color: var(--text-3);
       font-size: 13px;
       padding: 0 2px;
       opacity: 0;
@@ -965,7 +1077,8 @@
     .calendar-item:hover .cal-drag-handle { opacity: 1; }
     .cal-drag-handle:active { cursor: grabbing; }
     .calendar-item.drag-over {
-      box-shadow: 0 -2px 0 var(--text-muted), 3px 3px 8px var(--sh-dark), -3px -3px 8px var(--sh-light);
+      border-color: var(--border-hi);
+      border-top: 2px solid var(--accent);
     }
 
     /* ── 팔레트 프리셋 ── */
@@ -981,26 +1094,30 @@
       align-items: center;
       gap: 3px;
       background: none;
-      border: none;
+      border: 1.5px solid transparent;
       cursor: pointer;
       padding: 4px;
       border-radius: 8px;
-      transition: box-shadow 0.15s;
+      transition: border-color 0.12s, background 0.12s;
     }
     .palette-dot-btn:hover {
-      box-shadow: 2px 2px 6px var(--sh-dark), -2px -2px 6px var(--sh-light);
+      background: var(--hover);
+      border-color: var(--border);
     }
     .palette-dot-btn.active {
-      box-shadow: inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light);
+      background: var(--hover);
+      border-color: var(--border-hi);
     }
     .palette-dot-circle {
       width: 20px;
       height: 20px;
       border-radius: 50%;
+      border: 2px solid rgba(255,255,255,0.5);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     }
     .palette-dot-label {
       font-size: 8px;
-      color: var(--text-muted);
+      color: var(--text-3);
       font-family: HJSS, sans-serif;
       letter-spacing: 0.04em;
     }
@@ -1024,19 +1141,25 @@
     .checklist-filter-btn {
       font-size: 10px;
       padding: 3px 9px;
-      border-radius: 10px;
-      border: none;
-      background: var(--bg);
-      color: var(--text-muted);
+      border-radius: var(--radius-pill);
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      color: var(--text-3);
       cursor: pointer;
-      box-shadow: 1px 1px 3px var(--sh-dark), -1px -1px 2px var(--sh-light);
-      transition: box-shadow 0.12s, color 0.12s;
+      transition: background 0.12s, border-color 0.12s, color 0.12s;
       font-family: 'HJSS', sans-serif;
       letter-spacing: 0.04em;
+      box-shadow: none;
+    }
+    .checklist-filter-btn:hover {
+      background: var(--hover);
+      border-color: var(--border-hi);
+      color: var(--text-2);
     }
     .checklist-filter-btn.active {
-      box-shadow: inset 1px 1px 3px var(--sh-dark), inset -1px -1px 2px var(--sh-light);
-      color: var(--text-pri);
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
     }
 
     /* ── 모바일 최적화 ── */
@@ -1070,61 +1193,7 @@
 
   <script type="text/babel">
   /********************************************************
-   * 1) Firebase 설정 및 초기화
-   ********************************************************/
-  const firebaseConfig = {
-    apiKey: "AIzaSyC7-uDX9U7jwXywrJTq2N29wv3bxmFSTlk",
-    authDomain: "nagi-routine.firebaseapp.com",
-    projectId: "nagi-routine",
-  };
-  firebase.initializeApp(firebaseConfig);
-  const db = firebase.firestore();
-
-  /********************************************************
-   * 1-1) 비밀번호 보호 컴포넌트 (PasswordGuard)
-   ********************************************************/
-  function PasswordGuard({ children }) {
-    const [inputPwd, setInputPwd] = React.useState('');
-    const [isAuthorized, setIsAuthorized] = React.useState(false);
-
-    const checkPassword = () => {
-      if (inputPwd === "demian") {
-        setIsAuthorized(true);
-      } else {
-        alert("Please try again.");
-      }
-    };
-
-    const handleKeyDown = (e) => {
-      if (e.key === 'Enter') checkPassword();
-    };
-
-    if (!isAuthorized) {
-      return (
-        <div className="password-container">
-          <p className="password-title">Enter the password.</p>
-          <input
-            type="password"
-            className="input-text"
-            value={inputPwd}
-            onChange={(e) => setInputPwd(e.target.value)}
-            onKeyDown={handleKeyDown}
-          />
-          <button
-            className="add-button"
-            style={{ width: '100%', marginTop: '12px' }}
-            onClick={checkPassword}
-          >
-            ▼
-          </button>
-        </div>
-      );
-    }
-    return children;
-  }
-
-  /********************************************************
-   * 2) 아이콘 컴포넌트
+   * 1) 아이콘 컴포넌트
    ********************************************************/
   const IconPen = ({ size = 11 }) => (
     <svg width={size} height={size} viewBox="0 0 16 16" fill="none"
@@ -1158,11 +1227,11 @@
   const genId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
   const THEMES = [
+    { name: 'Teal',      bg: '#F0EBE2', dark: '#C8D4D3', light: '#FFFFFF' },
     { name: 'Sand',      bg: '#EEEAE3', dark: '#CEC8BE', light: '#FFFFFF' },
     { name: 'Parchment', bg: '#E8E2D8', dark: '#C8C2B8', light: '#FFFEF8' },
-    { name: 'Cream',     bg: '#F2EDE6', dark: '#D2CDC6', light: '#FFFFFF' },
-    { name: 'Mist',      bg: '#E6EAE8', dark: '#C6CAC8', light: '#FFFFFF' },
-    { name: 'Rose',      bg: '#EDE8E8', dark: '#CDC8C8', light: '#FFFFFF' },
+    { name: 'Mist',      bg: '#E8EEF0', dark: '#C4D4D8', light: '#FFFFFF' },
+    { name: 'Rose',      bg: '#EDE8E8', dark: '#CDB8B8', light: '#FFFFFF' },
   ];
 
   const applyTheme = (s) => {
@@ -1204,19 +1273,89 @@
   ];
 
   const defaultSettings = {
-    bgColor: '#EEEAE3',
-    bgDark: '#CEC8BE',
+    bgColor: '#F0EBE2',
+    bgDark: '#C8D4D3',
     bgLight: '#FFFFFF',
     subtitle: '내면의 성장을 향한 여정',
     sidebarPosition: 'left',
     blendMode: 'multiply',
     weekStart: 'sun',
-    focusMessages: [],
+    customFontPath: null,
+    iconColor: '#F4A0AE',
+    focusMessages: [
+      '오늘도 한 걸음씩, 꾸준히.',
+      '작은 변화가 큰 성장을 만든다.',
+      '지금 이 순간이 가장 중요하다.',
+      '매일의 기록이 당신의 역사가 된다.',
+      '포기하지 않는 것이 가장 큰 용기다.',
+    ],
   };
 
   /********************************************************
    * 3) 앱 컴포넌트
    ********************************************************/
+
+  // ── 하트 SVG — 블러 없이 깔끔한 뉴몰픽 스타일 (아이콘용으로 경계 선명)
+  const HEART_SVG = (color) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+    <defs>
+      <radialGradient id="hg_light" cx="36%" cy="26%" r="58%">
+        <stop offset="0%" stop-color="white" stop-opacity="0.52"/>
+        <stop offset="100%" stop-color="black" stop-opacity="0.0"/>
+      </radialGradient>
+      <radialGradient id="hg_shadow" cx="65%" cy="75%" r="55%">
+        <stop offset="0%" stop-color="black" stop-opacity="0.16"/>
+        <stop offset="100%" stop-color="black" stop-opacity="0.0"/>
+      </radialGradient>
+    </defs>
+    <path d="M50 83 C50 83, 8 56, 8 31 C8 15, 21 6, 34 6 C43 6, 50 16, 50 16 C50 16, 57 6, 66 6 C79 6, 92 15, 92 31 C92 56, 50 83, 50 83 Z"
+      fill="${color}"/>
+    <path d="M50 83 C50 83, 8 56, 8 31 C8 15, 21 6, 34 6 C43 6, 50 16, 50 16 C50 16, 57 6, 66 6 C79 6, 92 15, 92 31 C92 56, 50 83, 50 83 Z"
+      fill="url(#hg_light)"/>
+    <path d="M50 83 C50 83, 8 56, 8 31 C8 15, 21 6, 34 6 C43 6, 50 16, 50 16 C50 16, 57 6, 66 6 C79 6, 92 15, 92 31 C92 56, 50 83, 50 83 Z"
+      fill="url(#hg_shadow)"/>
+  </svg>`;
+
+  // ── 커스텀 폰트 적용: 'HJSS' @font-face를 동적으로 오버라이드
+  function applyFont(fontPath) {
+    let el = document.getElementById('custom-font-style');
+    if (!el) {
+      el = document.createElement('style');
+      el.id = 'custom-font-style';
+      document.head.appendChild(el);
+    }
+    if (fontPath) {
+      const fileUrl = 'file:///' + fontPath.replace(/\\/g, '/');
+      el.textContent = `@font-face { font-family: 'HJSS'; src: url('${fileUrl}'); }`;
+    } else {
+      el.textContent = '';
+    }
+  }
+
+  // ── 하트 PNG 생성 (SVG → canvas → dataURL)
+  function generateIconPng(color, size = 256) {
+    return new Promise((resolve, reject) => {
+      const svgStr = HEART_SVG(color);
+      const blob = new Blob([svgStr], { type: 'image/svg+xml' });
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = size; canvas.height = size;
+        canvas.getContext('2d').drawImage(img, 0, 0, size, size);
+        URL.revokeObjectURL(url);
+        resolve(canvas.toDataURL('image/png'));
+      };
+      img.onerror = reject;
+      img.src = url;
+    });
+  }
+
+  // ── 앱 아이콘 색상 적용
+  function applyIconColor(color) {
+    generateIconPng(color).then(dataUrl => {
+      window.electronAPI.setAppIcon(dataUrl);
+    }).catch(e => console.error('icon update error:', e));
+  }
 
   function App() {
     const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(() => window.innerWidth <= 640);
@@ -1243,7 +1382,8 @@
     // 포커스 메시지
     const [focusMessage, setFocusMessage] = React.useState('');
 
-    // export 상태: 'idle' | 'loading' | 'copied' | 'saved' | 'download'
+    // export 상태: 'idle' | 'loading' | 'copied' | 'saved'
+    // export 상태: 'idle' | 'loading' | 'copied' | 'download'
     const [exportStatus, setExportStatus] = React.useState('idle');
     const [exportBlobUrl, setExportBlobUrl] = React.useState(null);
 
@@ -1260,6 +1400,7 @@
     const [newCheckItem, setNewCheckItem] = React.useState('');
     const [editingCheckId, setEditingCheckId] = React.useState(null);
     const [editingCheckText, setEditingCheckText] = React.useState('');
+    const [checklistFilter, setChecklistFilter] = React.useState(null); // null = 전체, calendarId = 해당 캘린더
 
     // 모아보기: 4개 초과 시 대표 캘린더 IDs (null = 순서대로 앞 4개)
     const [overviewPicks, setOverviewPicks] = React.useState(null);
@@ -1277,61 +1418,34 @@
     const draggedIdRef = React.useRef(null);
 
     /********************************************************
-     * (3-0) 데이터 로드 (Web: localStorage + Firestore)
+     * (3-0) 데이터 로드 (Electron IPC)
      ********************************************************/
-    // Settings: localStorage
-    React.useEffect(() => {
-      const saved = localStorage.getItem('nagi-settings');
-      const s = saved ? { ...defaultSettings, ...JSON.parse(saved) } : { ...defaultSettings };
-      setSettings(s);
-      setEditSubtitle(s.subtitle);
-      applyTheme(s);
-      setChecklist(s.checklist || []);
-      if (s.focusMessages && s.focusMessages.length > 0) {
-        setFocusMessage(s.focusMessages[Math.floor(Math.random() * s.focusMessages.length)]);
-      } else {
-        // Default focus messages from JSON if none saved
-        fetch('./demian_focus_messages (1).json')
-          .then(r => r.json())
-          .then(data => {
-            const msgs = data.messages || [];
-            if (msgs.length > 0) {
-              const newS = { ...s, focusMessages: msgs };
-              setSettings(newS);
-              setFocusMessage(msgs[Math.floor(Math.random() * msgs.length)]);
-              localStorage.setItem('nagi-settings', JSON.stringify(newS));
-            }
-          })
-          .catch(() => {});
-      }
-    }, []);
+    const loadAll = () => {
+      window.electronAPI.getData().then(({ calendars: cals, settings: setts }) => {
+        const loadedCals = cals || [];
+        setCalendars(loadedCals);
+        setSelectedCalendar(loadedCals.length > 0 ? loadedCals[0].id : null);
 
-    // Calendars: Firestore (로컬 순서 적용)
+        const s = { ...defaultSettings, ...setts };
+        setSettings(s);
+        setEditSubtitle(s.subtitle);
+        applyTheme(s);
+        if (s.customFontPath) applyFont(s.customFontPath);
+        if (s.iconColor) applyIconColor(s.iconColor);
+
+        if (s.focusMessages && s.focusMessages.length > 0) {
+          setFocusMessage(s.focusMessages[Math.floor(Math.random() * s.focusMessages.length)]);
+        }
+        setChecklist(s.checklist || []);
+      });
+    };
+
     React.useEffect(() => {
-      const unsubscribe = db.collection('calendars').onSnapshot(
-        (snapshot) => {
-          const loaded = [];
-          snapshot.forEach(doc => {
-            loaded.push({ id: doc.id, ...doc.data() });
-          });
-          // localStorage에 저장된 순서 적용
-          const savedOrder = JSON.parse(localStorage.getItem('nagi-cal-order') || '[]');
-          if (savedOrder.length > 0) {
-            loaded.sort((a, b) => {
-              const ai = savedOrder.indexOf(a.id);
-              const bi = savedOrder.indexOf(b.id);
-              if (ai === -1 && bi === -1) return 0;
-              if (ai === -1) return 1;
-              if (bi === -1) return -1;
-              return ai - bi;
-            });
-          }
-          setCalendars(loaded);
-          setSelectedCalendar(prev => prev || (loaded.length > 0 ? loaded[0].id : null));
-        },
-        (error) => { console.error('Firestore 구독 에러:', error); }
-      );
-      return () => unsubscribe();
+      loadAll();
+      window.electronAPI.onMenuAction((action) => {
+        if (action === 'reload') loadAll();
+        if (action === 'showMemos') setShowMemos(true);
+      });
     }, []);
 
     // 클립보드 붙여넣기 (모달 열려있을 때)
@@ -1358,12 +1472,13 @@
     }, [pinModal.open]);
 
     /********************************************************
-     * (3-1) 저장 헬퍼 (Web)
+     * (3-1) 저장 헬퍼
      ********************************************************/
-    const saveSettings = (newSetts) => {
-      localStorage.setItem('nagi-settings', JSON.stringify(newSetts));
-      setSettings(newSetts);
-      applyTheme(newSetts);
+    const save = (newCals, newSetts) => {
+      window.electronAPI.saveData({
+        calendars: newCals ?? calendars,
+        settings: newSetts ?? settings,
+      });
     };
 
     /********************************************************
@@ -1372,12 +1487,13 @@
     const saveChecklist = (newList) => {
       setChecklist(newList);
       const newSetts = { ...settings, checklist: newList };
-      saveSettings(newSetts);
+      setSettings(newSetts);
+      save(null, newSetts);
     };
 
     const addCheckItem = () => {
       if (!newCheckItem.trim()) return;
-      saveChecklist([...checklist, { id: genId(), text: newCheckItem.trim(), done: false, starred: false }]);
+      saveChecklist([...checklist, { id: genId(), text: newCheckItem.trim(), done: false, starred: false, calendarId: selectedCalendar }]);
       setNewCheckItem('');
     };
 
@@ -1501,20 +1617,21 @@
     /********************************************************
      * (3-3) 새 캘린더 추가
      ********************************************************/
-    const addCalendar = async () => {
+    const addCalendar = () => {
       if (!newTitle.trim()) return;
-      try {
-        await db.collection('calendars').add({
-          title: newTitle.trim(),
-          color: newColor,
-          completedDates: [],
-          pinnedDates: {},
-        });
-        setNewTitle('');
-        setNewColor('#9CA3AF');
-      } catch (err) {
-        console.error('달력 추가 중 에러:', err);
-      }
+      const newCal = {
+        id: genId(),
+        title: newTitle.trim(),
+        color: newColor,
+        completedDates: [],
+        pinnedDates: {},
+      };
+      const newCals = [...calendars, newCal];
+      setCalendars(newCals);
+      if (!selectedCalendar) setSelectedCalendar(newCal.id);
+      save(newCals, null);
+      setNewTitle('');
+      setNewColor('#9CA3AF');
     };
 
     /********************************************************
@@ -1527,17 +1644,14 @@
       setEditColor(cal.color);
     };
 
-    const saveEditCalendar = async (calId) => {
+    const saveEditCalendar = (calId) => {
       if (!editTitle.trim()) return;
-      try {
-        await db.collection('calendars').doc(calId).update({
-          title: editTitle.trim(),
-          color: editColor,
-        });
-        setEditingCalId(null);
-      } catch (err) {
-        console.error('달력 수정 중 에러:', err);
-      }
+      const newCals = calendars.map(c =>
+        c.id === calId ? { ...c, title: editTitle.trim(), color: editColor } : c
+      );
+      setCalendars(newCals);
+      save(newCals, null);
+      setEditingCalId(null);
     };
 
     const cancelEditCalendar = () => setEditingCalId(null);
@@ -1545,7 +1659,7 @@
     /********************************************************
      * (3-5) 날짜 토글
      ********************************************************/
-    const toggleDate = async (day) => {
+    const toggleDate = (day) => {
       if (!selectedCalendar) return;
       const targetCal = calendars.find(c => c.id === selectedCalendar);
       if (!targetCal) return;
@@ -1558,26 +1672,26 @@
       const idx = dates.indexOf(dateKey);
       if (idx === -1) { dates.push(dateKey); } else { dates.splice(idx, 1); }
 
-      try {
-        await db.collection('calendars').doc(selectedCalendar).update({ completedDates: dates });
-      } catch (err) {
-        console.error('날짜 토글 중 에러:', err);
-      }
+      const newCals = calendars.map(c =>
+        c.id === selectedCalendar ? { ...c, completedDates: dates } : c
+      );
+      setCalendars(newCals);
+      save(newCals, null);
     };
 
     /********************************************************
      * (3-6) 달력 삭제
      ********************************************************/
-    const deleteCalendar = async (calendarId, e) => {
+    const deleteCalendar = (calendarId, e) => {
       e.stopPropagation();
       const ok = window.confirm('정말 이 캘린더를 삭제할까?');
       if (!ok) return;
-      try {
-        await db.collection('calendars').doc(calendarId).delete();
-        if (selectedCalendar === calendarId) setSelectedCalendar(null);
-      } catch (err) {
-        console.error('캘린더 삭제 중 오류:', err);
+      const newCals = calendars.filter(c => c.id !== calendarId);
+      setCalendars(newCals);
+      if (selectedCalendar === calendarId) {
+        setSelectedCalendar(newCals.length > 0 ? newCals[0].id : null);
       }
+      save(newCals, null);
     };
 
     /********************************************************
@@ -1607,23 +1721,23 @@
       } else {
         delete newPinnedDates[pinModal.dateKey];
       }
-      try {
-        await db.collection('calendars').doc(selectedCalendar).update({ pinnedDates: newPinnedDates });
-        setPinModal({ open: false, dateKey: '', memo: '', image: null, imgEdit: defaultImgEdit });
-      } catch (err) {
-        console.error('핀 저장 중 에러:', err);
-      }
+      const newCals = calendars.map(c =>
+        c.id === selectedCalendar ? { ...c, pinnedDates: newPinnedDates } : c
+      );
+      setCalendars(newCals);
+      save(newCals, null);
+      setPinModal({ open: false, dateKey: '', memo: '', image: null, imgEdit: defaultImgEdit });
     };
 
-    const removePin = async (dateKey) => {
+    const removePin = (dateKey) => {
       if (!selectedCalendar) return;
       const newPinnedDates = { ...(currentCalendar.pinnedDates || {}) };
       delete newPinnedDates[dateKey];
-      try {
-        await db.collection('calendars').doc(selectedCalendar).update({ pinnedDates: newPinnedDates });
-      } catch (err) {
-        console.error('핀 제거 중 에러:', err);
-      }
+      const newCals = calendars.map(c =>
+        c.id === selectedCalendar ? { ...c, pinnedDates: newPinnedDates } : c
+      );
+      setCalendars(newCals);
+      save(newCals, null);
     };
 
     const handleImageSelect = (e) => {
@@ -1670,27 +1784,32 @@
      ********************************************************/
     const applyThemePreset = (theme) => {
       const newSetts = { ...settings, bgColor: theme.bg, bgDark: theme.dark, bgLight: theme.light };
-      saveSettings(newSetts);
+      setSettings(newSetts);
+      applyTheme(newSetts);
+      save(null, newSetts);
     };
 
     const saveSubtitle = () => {
       const newSetts = { ...settings, subtitle: editSubtitle };
-      saveSettings(newSetts);
+      setSettings(newSetts);
+      save(null, newSetts);
     };
 
     const addFocusMessage = () => {
       if (!newFocusMsg.trim()) return;
       const newMsgs = [...(settings.focusMessages || []), newFocusMsg.trim()];
       const newSetts = { ...settings, focusMessages: newMsgs };
-      saveSettings(newSetts);
+      setSettings(newSetts);
       setFocusMessage(newFocusMsg.trim());
+      save(null, newSetts);
       setNewFocusMsg('');
     };
 
     const deleteFocusMessage = (idx) => {
       const newMsgs = settings.focusMessages.filter((_, i) => i !== idx);
       const newSetts = { ...settings, focusMessages: newMsgs };
-      saveSettings(newSetts);
+      setSettings(newSetts);
+      save(null, newSetts);
       if (newMsgs.length > 0) {
         setFocusMessage(newMsgs[Math.floor(Math.random() * newMsgs.length)]);
       } else {
@@ -1703,7 +1822,8 @@
       if (!trimmed) return;
       const newMsgs = settings.focusMessages.map((m, i) => i === idx ? trimmed : m);
       const newSetts = { ...settings, focusMessages: newMsgs };
-      saveSettings(newSetts);
+      setSettings(newSetts);
+      save(null, newSetts);
       setEditingFocusIdx(null);
       setEditingFocusText('');
     };
@@ -1715,59 +1835,82 @@
     };
 
     /********************************************************
-     * (3-9b) 팔레트 일괄 변경 (Firestore batch)
+     * (3-9b) 팔레트 일괄 변경
      ********************************************************/
-    const applyBulkPalette = async (preset) => {
+    const applyBulkPalette = (preset) => {
       if (calendars.length === 0) return;
       const backup = calendars.map(c => ({ id: c.id, color: c.color }));
       setLastCalColors(backup);
       const newColors = generateHarmoniousColors(preset.baseHue, calendars.length);
-      try {
-        const batch = db.batch();
-        calendars.forEach((c, i) => {
-          batch.update(db.collection('calendars').doc(c.id), { color: newColors[i] });
-        });
-        await batch.commit();
-        setSelectedPalette(preset.name);
-      } catch (err) {
-        console.error('팔레트 적용 중 에러:', err);
-      }
+      const newCals = calendars.map((c, i) => ({ ...c, color: newColors[i] }));
+      setCalendars(newCals);
+      save(newCals, null);
+      setSelectedPalette(preset.name);
     };
 
-    const undoBulkPalette = async () => {
+    const undoBulkPalette = () => {
       if (!lastCalColors) return;
-      try {
-        const batch = db.batch();
-        lastCalColors.forEach(({ id, color }) => {
-          batch.update(db.collection('calendars').doc(id), { color });
-        });
-        await batch.commit();
-        setLastCalColors(null);
-        setSelectedPalette(null);
-      } catch (err) {
-        console.error('팔레트 되돌리기 중 에러:', err);
-      }
+      const newCals = calendars.map(c => {
+        const b = lastCalColors.find(b => b.id === c.id);
+        return b ? { ...c, color: b.color } : c;
+      });
+      setCalendars(newCals);
+      save(newCals, null);
+      setLastCalColors(null);
+      setSelectedPalette(null);
     };
 
     /********************************************************
      * (3-9c) 달력 순서 드래그
      ********************************************************/
-    // 달력 순서 변경 — Pointer Events (데스크탑 마우스 + 모바일 터치 모두 동작)
-    const handleDragHandlePointerDown = (e, id) => {
-      e.currentTarget.setPointerCapture(e.pointerId);
+    const handleDragStart = (e, id) => {
       draggedIdRef.current = id;
-      document.body.style.cursor = 'grabbing';
+      e.dataTransfer.effectAllowed = 'move';
     };
-    const handleDragHandlePointerMove = (e) => {
-      if (!draggedIdRef.current) return;
-      const el = document.elementFromPoint(e.clientX, e.clientY);
+
+    const handleDragOver = (e, id) => {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      if (id !== draggedIdRef.current) setDragOverId(id);
+    };
+
+    const handleDrop = (e, targetId) => {
+      e.preventDefault();
+      const fromId = draggedIdRef.current;
+      if (!fromId || fromId === targetId) { setDragOverId(null); return; }
+      const fromIdx = calendars.findIndex(c => c.id === fromId);
+      const toIdx   = calendars.findIndex(c => c.id === targetId);
+      if (fromIdx < 0 || toIdx < 0) { setDragOverId(null); return; }
+      const newCals = [...calendars];
+      const [moved] = newCals.splice(fromIdx, 1);
+      newCals.splice(toIdx, 0, moved);
+      setCalendars(newCals);
+      save(newCals, null);
+      setDragOverId(null);
+      draggedIdRef.current = null;
+    };
+
+    const handleDragEnd = () => {
+      setDragOverId(null);
+      draggedIdRef.current = null;
+    };
+
+    // 터치 드래그 (모바일)
+    const handleTouchDragStart = (e, id) => {
+      draggedIdRef.current = id;
+    };
+    const handleTouchDragMove = (e) => {
+      e.preventDefault();
+      const touch = e.touches[0];
+      const el = document.elementFromPoint(touch.clientX, touch.clientY);
       const item = el?.closest('[data-cal-id]');
-      const targetId = item?.dataset?.calId;
-      if (targetId && targetId !== draggedIdRef.current) setDragOverId(targetId);
-      else if (!targetId) setDragOverId(null);
+      if (item) {
+        const targetId = item.dataset.calId;
+        if (targetId && targetId !== draggedIdRef.current) setDragOverId(targetId);
+      }
     };
-    const handleDragHandlePointerUp = () => {
-      document.body.style.cursor = '';
+    const handleTouchDragEnd = (e) => {
+      e.preventDefault();
       const fromId = draggedIdRef.current;
       if (fromId && dragOverId && fromId !== dragOverId) {
         const fromIdx = calendars.findIndex(c => c.id === fromId);
@@ -1813,7 +1956,7 @@
     };
 
     // 모아보기 네잎클로버 SVG (최대 4색)
-    // 14×14 뷰박스: 꽃잎 4개(NW·NE·SE·SW 대각선), 각 사분면에 독립 배치
+    // 14×14 뷰박스: 꽃잎 4개(NW·NE·SE·SW), off*√2 < pr 로 중앙 채움
     const CloverDot = ({ colors }) => {
       if (!colors || colors.length === 0) return null;
       const size = 14, pr = 3.6, off = 2.5, cx = 7, cy = 7;
@@ -1912,16 +2055,19 @@
                   key={cal.id}
                   data-cal-id={cal.id}
                   className={`calendar-item ${selectedCalendar === cal.id ? 'selected' : ''} ${dragOverId === cal.id ? 'drag-over' : ''}`}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, cal.id)}
+                  onDragOver={(e) => handleDragOver(e, cal.id)}
+                  onDrop={(e) => handleDrop(e, cal.id)}
+                  onDragEnd={handleDragEnd}
                   onClick={() => setSelectedCalendar(cal.id)}
                 >
                   <span
                     className="cal-drag-handle"
                     title="드래그하여 순서 변경"
-                    style={{ touchAction: 'none' }}
-                    onPointerDown={(e) => handleDragHandlePointerDown(e, cal.id)}
-                    onPointerMove={handleDragHandlePointerMove}
-                    onPointerUp={handleDragHandlePointerUp}
-                    onPointerCancel={handleDragHandlePointerUp}
+                    onTouchStart={(e) => { e.stopPropagation(); handleTouchDragStart(e, cal.id); }}
+                    onTouchMove={handleTouchDragMove}
+                    onTouchEnd={handleTouchDragEnd}
                   >⠿</span>
                   <div className="cal-item-left">
                     <div className="cal-color-dot" style={{ background: cal.color }} />
@@ -1963,15 +2109,6 @@
               />
               <button className="add-button" onClick={addCalendar}>Add</button>
             </div>
-          </div>
-
-          {/* 전체 메모 버튼 */}
-          <div style={{ marginTop: 20, marginBottom: 4 }}>
-            <button
-              className="sm-button"
-              style={{ width: '100%' }}
-              onClick={() => setShowMemos(true)}
-            >전체 메모</button>
           </div>
 
           {/* ── 설정 패널 ── */}
@@ -2056,22 +2193,21 @@
                         style={{
                           flex: 1,
                           padding: '8px 0',
-                          border: 'none',
+                          border: `1.5px solid ${isActive ? 'var(--border-hi)' : 'var(--border)'}`,
                           borderRadius: 10,
                           cursor: 'pointer',
-                          background: 'var(--bg)',
-                          color: isActive ? 'var(--text-pri)' : 'var(--text-muted)',
+                          background: isActive ? 'var(--accent)' : 'var(--surface)',
+                          color: isActive ? '#fff' : 'var(--text-2)',
                           fontSize: 11,
                           letterSpacing: '0.1em',
                           fontFamily: 'HJSS, sans-serif',
-                          boxShadow: isActive
-                            ? 'inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light)'
-                            : '3px 3px 6px var(--sh-dark), -3px -3px 6px var(--sh-light)',
-                          transition: 'box-shadow 0.15s ease',
+                          boxShadow: 'none',
+                          transition: 'background 0.15s, border-color 0.15s, color 0.15s',
                         }}
                         onClick={() => {
                           const newS = { ...settings, sidebarPosition: pos };
-                          saveSettings(newS);
+                          setSettings(newS);
+                          save(null, newS);
                         }}
                       >
                         {pos === 'left' ? '← 왼쪽' : '오른쪽 →'}
@@ -2089,19 +2225,21 @@
                       <button
                         key={opt.val}
                         style={{
-                          flex: 1, padding: '8px 0', border: 'none', borderRadius: 10,
-                          cursor: 'pointer', background: 'var(--bg)',
-                          color: isActive ? 'var(--text-pri)' : 'var(--text-muted)',
+                          flex: 1, padding: '8px 0',
+                          border: `1.5px solid ${isActive ? 'var(--border-hi)' : 'var(--border)'}`,
+                          borderRadius: 10,
+                          cursor: 'pointer',
+                          background: isActive ? 'var(--accent)' : 'var(--surface)',
+                          color: isActive ? '#fff' : 'var(--text-2)',
                           fontSize: 11, letterSpacing: '0.1em',
                           fontFamily: 'HJSS, sans-serif',
-                          boxShadow: isActive
-                            ? 'inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light)'
-                            : '3px 3px 6px var(--sh-dark), -3px -3px 6px var(--sh-light)',
-                          transition: 'box-shadow 0.15s ease',
+                          boxShadow: 'none',
+                          transition: 'background 0.15s, border-color 0.15s, color 0.15s',
                         }}
                         onClick={() => {
                           const newS = { ...settings, weekStart: opt.val };
-                          saveSettings(newS);
+                          setSettings(newS);
+                          save(null, newS);
                         }}
                       >{opt.label}</button>
                     );
@@ -2119,28 +2257,88 @@
                         style={{
                           flex: 1,
                           padding: '8px 0',
-                          border: 'none',
+                          border: `1.5px solid ${isActive ? 'var(--border-hi)' : 'var(--border)'}`,
                           borderRadius: 10,
                           cursor: 'pointer',
-                          background: 'var(--bg)',
-                          color: isActive ? 'var(--text-pri)' : 'var(--text-muted)',
+                          background: isActive ? 'var(--accent)' : 'var(--surface)',
+                          color: isActive ? '#fff' : 'var(--text-2)',
                           fontSize: 11,
                           letterSpacing: '0.05em',
                           fontFamily: 'HJSS, sans-serif',
-                          boxShadow: isActive
-                            ? 'inset 3px 3px 6px var(--sh-dark), inset -3px -3px 6px var(--sh-light)'
-                            : '3px 3px 6px var(--sh-dark), -3px -3px 6px var(--sh-light)',
-                          transition: 'box-shadow 0.15s ease',
+                          boxShadow: 'none',
+                          transition: 'background 0.15s, border-color 0.15s, color 0.15s',
                         }}
                         onClick={() => {
                           const newS = { ...settings, blendMode: opt.val };
-                          saveSettings(newS);
+                          setSettings(newS);
+                          save(null, newS);
                         }}
                       >
                         {opt.label}
                       </button>
                     );
                   })}
+                </div>
+
+                {/* 폰트 */}
+                <p className="settings-section-label">font</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16 }}>
+                  <span style={{
+                    flex: 1, fontSize: 10, color: 'var(--text-sub)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {settings.customFontPath
+                      ? settings.customFontPath.replace(/\\/g, '/').split('/').pop()
+                      : 'HJSS (기본)'}
+                  </span>
+                  <button
+                    className="sm-button"
+                    onClick={async () => {
+                      const p = await window.electronAPI.showFontDialog();
+                      if (p) {
+                        applyFont(p);
+                        const newS = { ...settings, customFontPath: p };
+                        setSettings(newS);
+                        save(null, newS);
+                      }
+                    }}
+                  >선택</button>
+                  {settings.customFontPath && (
+                    <button
+                      className="sm-button"
+                      onClick={() => {
+                        applyFont(null);
+                        const newS = { ...settings, customFontPath: null };
+                        setSettings(newS);
+                        save(null, newS);
+                      }}
+                    >초기화</button>
+                  )}
+                </div>
+
+                {/* 아이콘 컬러 */}
+                <p className="settings-section-label">icon</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                  <div
+                    style={{ width: 44, height: 44, flexShrink: 0 }}
+                    dangerouslySetInnerHTML={{ __html: HEART_SVG(settings.iconColor || '#F4A0AE') }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <input
+                      type="color"
+                      value={settings.iconColor || '#F4A0AE'}
+                      style={{ width: 44, height: 26, border: 'none', borderRadius: 6, cursor: 'pointer', padding: 0, background: 'none' }}
+                      onBlur={(e) => {
+                        const color = e.target.value;
+                        const newS = { ...settings, iconColor: color };
+                        setSettings(newS);
+                        save(null, newS);
+                        applyIconColor(color);
+                      }}
+                      onChange={(e) => setSettings(prev => ({ ...prev, iconColor: e.target.value }))}
+                    />
+                    <span style={{ fontSize: 9, color: 'var(--text-muted)', letterSpacing: '0.04em' }}>앱 아이콘</span>
+                  </div>
                 </div>
 
                 {/* 포커스 메시지 */}
@@ -2224,7 +2422,7 @@
 
           return (
             <div style={{
-              background: settings.bgColor || '#EEEAE3',
+              background: settings.bgColor || '#F0EBE2',
               borderRadius: '32px',
               padding: '32px',
               width: '444px',
@@ -2273,12 +2471,13 @@
                             }}
                             style={{
                               display: 'flex', alignItems: 'center', gap: 5,
-                              padding: '4px 9px', border: 'none', borderRadius: 8, cursor: 'pointer',
-                              background: 'var(--bg)', fontFamily: 'HJSS, sans-serif', fontSize: 10,
-                              color: isPicked ? 'var(--text-pri)' : 'var(--text-muted)',
-                              boxShadow: isPicked
-                                ? 'inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light)'
-                                : '2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light)',
+                              padding: '4px 9px',
+                              border: `1.5px solid ${isPicked ? 'var(--border-hi)' : 'var(--border)'}`,
+                              borderRadius: 8, cursor: 'pointer',
+                              background: isPicked ? 'var(--accent)' : 'var(--surface)',
+                              fontFamily: 'HJSS, sans-serif', fontSize: 10,
+                              color: isPicked ? '#fff' : 'var(--text-2)',
+                              boxShadow: 'none',
                               maxWidth: '120px', overflow: 'hidden',
                             }}
                           >
@@ -2316,9 +2515,9 @@
                         <button
                           className="calendar-day"
                           style={{
-                            color: '#2C2825',
+                            color: 'var(--text-1)',
                             fontWeight: isToday ? 700 : 'normal',
-                            boxShadow: isToday ? '3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light)' : '',
+                            borderColor: isToday ? 'var(--border-hi)' : 'transparent',
                             position: 'relative',
                           }}
                           disabled
@@ -2357,7 +2556,7 @@
           <div
             id="calendar-export-area"
             style={{
-              background: settings.bgColor || '#EEEAE3',
+              background: settings.bgColor || '#F0EBE2',
               borderRadius: '32px',
               padding: '32px',
               display: 'flex',
@@ -2418,12 +2617,10 @@
                           onClick={() => handleDayClick(day)}
                           style={{
                             backgroundColor: isCompleted ? currentCalendar.color : 'transparent',
-                            mixBlendMode: isCompleted ? (settings.blendMode || 'multiply') : 'normal',
-                            color: isCompleted ? getContrastColor(currentCalendar.color) : '#2C2825',
+                            color: isCompleted ? getContrastColor(currentCalendar.color) : 'var(--text-1)',
                             fontWeight: isToday ? 700 : 'normal',
-                            boxShadow: isCompleted
-                              ? 'inset 3px 3px 6px rgba(0,0,0,0.12), inset -2px -2px 5px rgba(255,255,255,0.25)'
-                              : isToday ? '3px 3px 7px var(--sh-dark), -3px -3px 7px var(--sh-light)' : '',
+                            borderColor: !isCompleted && isToday ? 'var(--border-hi)' : 'transparent',
+                            boxShadow: isCompleted ? '0 2px 8px rgba(0,0,0,0.12)' : '',
                           }}
                         >
                           {day}
@@ -2458,12 +2655,35 @@
 
               {/* 체크리스트 */}
               <div className="checklist-card">
-                <p className="checklist-title">checklist</p>
-                {checklist.length > 0 && checklist.map(item => (
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 8 }}>
+                  <p className="checklist-title" style={{ marginBottom: 0 }}>checklist</p>
+                </div>
+                {/* 카테고리 필터 */}
+                {calendars.length > 0 && (
+                  <div className="checklist-filter-row">
+                    <button
+                      className={`checklist-filter-btn${checklistFilter === null ? ' active' : ''}`}
+                      onClick={() => setChecklistFilter(null)}
+                    >전체</button>
+                    {calendars.map(cal => (
+                      <button
+                        key={cal.id}
+                        className={`checklist-filter-btn${checklistFilter === cal.id ? ' active' : ''}`}
+                        onClick={() => setChecklistFilter(prev => prev === cal.id ? null : cal.id)}
+                        style={checklistFilter === cal.id ? { background: cal.color, color: '#fff', boxShadow: 'inset 1px 1px 3px rgba(0,0,0,0.18), inset -1px -1px 2px rgba(255,255,255,0.1)' } : {}}
+                      >
+                        <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: cal.color, marginRight: 4, verticalAlign: 'middle' }} />
+                        {cal.title}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {checklist.filter(item => checklistFilter === null || !item.calendarId || item.calendarId === checklistFilter).length > 0 &&
+                  checklist.filter(item => checklistFilter === null || !item.calendarId || item.calendarId === checklistFilter).map(item => (
                   <div
                     key={item.id}
                     className="checklist-item"
-                    style={item.starred ? { backgroundColor: settings.bgDark + '50', borderRadius: 8, margin: '2px -4px', padding: '5px 4px' } : {}}
+                    style={item.starred ? { backgroundColor: 'var(--hover)', borderRadius: 8, margin: '2px -4px', padding: '5px 4px', borderLeft: '2.5px solid var(--border-hi)' } : {}}
                   >
                     <button
                       className={`checklist-star${item.starred ? ' starred' : ''}`}
@@ -2473,7 +2693,7 @@
                     >{item.starred ? '★' : '☆'}</button>
                     <button
                       className={`checklist-check${item.done ? ' done' : ''}`}
-                      style={item.done ? { background: currentCalendar.color, boxShadow: 'inset 1px 1px 3px rgba(0,0,0,0.12), inset -1px -1px 2px rgba(255,255,255,0.15)' } : {}}
+                      style={item.done ? { background: currentCalendar.color, borderColor: currentCalendar.color } : {}}
                       onClick={() => toggleCheckItem(item.id)}
                     />
                     {editingCheckId === item.id ? (
@@ -2534,6 +2754,7 @@
                       className="postit"
                       style={{
                         transform: `rotate(${postitRotations[idx % postitRotations.length]}deg)`,
+                        border: `2px solid ${currentCalendar.color}`,
                       }}
                     >
                       {/* 압정 */}
@@ -2629,12 +2850,13 @@
                 {pinModal.image ? (() => {
                   const ie = pinModal.imgEdit || defaultImgEdit;
                   const btnStyle = (active) => ({
-                    padding: '5px 9px', border: 'none', borderRadius: 8, cursor: 'pointer',
-                    background: 'var(--bg)', color: active ? 'var(--text-pri)' : 'var(--text-sub)',
+                    padding: '5px 9px',
+                    border: `1.5px solid ${active ? 'var(--border-hi)' : 'var(--border)'}`,
+                    borderRadius: 8, cursor: 'pointer',
+                    background: active ? 'var(--accent)' : 'var(--surface)',
+                    color: active ? '#fff' : 'var(--text-2)',
                     fontSize: 13, fontFamily: 'HJSS, sans-serif',
-                    boxShadow: active
-                      ? 'inset 2px 2px 5px var(--sh-dark), inset -2px -2px 5px var(--sh-light)'
-                      : '2px 2px 5px var(--sh-dark), -2px -2px 5px var(--sh-light)',
+                    boxShadow: 'none',
                   });
                   return (
                     <div>
@@ -2734,25 +2956,25 @@
                           type="range" min="0.4" max="2.0" step="0.05"
                           value={ie.scale}
                           onChange={(e) => setPinModal(prev => ({ ...prev, imgEdit: { ...(prev.imgEdit||defaultImgEdit), scale: parseFloat(e.target.value) } }))}
-                          style={{ flex: 1, minWidth: 60, accentColor: 'var(--text-sub)', cursor: 'pointer' }}
+                          style={{ flex: 1, minWidth: 60, accentColor: 'var(--accent)', cursor: 'pointer' }}
                           title={`크기: ${Math.round(ie.scale * 100)}%`}
                         />
-                        <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 28 }}>{Math.round(ie.scale * 100)}%</span>
+                        <span style={{ fontSize: 10, color: 'var(--text-3)', minWidth: 28 }}>{Math.round(ie.scale * 100)}%</span>
                       </div>
                     </div>
                   );
                 })() : (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: 'var(--text-muted)', fontSize: 12 }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', color: 'var(--text-2)', fontSize: 12 }}>
                       <input type="file" accept="image/*" style={{ display: 'none' }} onChange={handleImageSelect} />
                       <span style={{
                         padding: '7px 14px', borderRadius: 10,
-                        background: 'var(--bg)',
-                        boxShadow: '3px 3px 6px var(--sh-dark), -3px -3px 6px var(--sh-light)',
-                        fontSize: 12, color: 'var(--text-sub)',
+                        background: 'var(--surface)',
+                        border: '1.5px solid var(--border)',
+                        fontSize: 12, color: 'var(--text-2)',
                       }}>+ 사진 첨부</span>
                     </label>
-                    <span style={{ fontSize: 10, color: 'var(--text-muted)' }}>또는 Ctrl+V 붙여넣기</span>
+                    <span style={{ fontSize: 10, color: 'var(--text-3)' }}>또는 Ctrl+V 붙여넣기</span>
                   </div>
                 )}
               </div>
@@ -2828,11 +3050,7 @@
    * 4) 최종 렌더링
    ********************************************************/
   const root = ReactDOM.createRoot(document.getElementById('root'));
-  root.render(
-    <PasswordGuard>
-      <App />
-    </PasswordGuard>
-  );
+  root.render(<App />);
   </script>
 </body>
 </html>

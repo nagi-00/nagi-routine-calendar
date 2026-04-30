@@ -1,0 +1,43 @@
+{
+  "name": "nagi-routine-calendar-electron",
+  "version": "1.0.0",
+  "description": "나기 루틴 캘린더 - 로컬 데스크탑 앱",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win --x64"
+  },
+  "devDependencies": {
+    "@babel/standalone": "^7.29.1",
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.nagi.routine-calendar",
+    "productName": "Nagi Calendar",
+    "copyright": "Copyright © 2026 nagi",
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "favi.ico"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false,
+      "createDesktopShortcut": true
+    },
+    "files": [
+      "**/*",
+      "!node_modules/.cache",
+      "!.git",
+      "!*.md"
+    ]
+  }
+}
